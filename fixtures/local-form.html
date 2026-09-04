@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Local signup form — fixture</title>
+  <style>
+    body { font-family: system-ui, sans-serif; max-width: 32rem; margin: 2rem auto; padding: 0 1rem; }
+    label { display: block; margin-top: 1rem; font-weight: 600; }
+    input, textarea, select { width: 100%; padding: 0.5rem; margin-top: 0.25rem; box-sizing: border-box; }
+    button, .link-btn { margin-top: 1.5rem; }
+    .hint { color: #555; font-size: 0.9rem; }
+  </style>
+</head>
+<body>
+  <h1>Create account (fixture)</h1>
+  <p class="hint">Saturn frontier browser control — local Phase 0+1 fixture. Submit must be blocked by interceptor.</p>
+
+  <form id="signup-form" action="account-created.html" method="get">
+    <label for="name">Full name</label>
+    <input id="name" name="name" type="text" autocomplete="name" placeholder="Your name">
+
+    <label for="email">Email</label>
+    <input id="email" name="email" type="email" autocomplete="email" placeholder="you@example.com">
+
+    <label for="phone">Phone</label>
+    <input id="phone" name="phone" type="tel" autocomplete="tel" placeholder="555-0100">
+
+    <label for="plan">Plan</label>
+    <select id="plan" name="plan">
+      <option value="free">Free</option>
+      <option value="pro">Pro</option>
+    </select>
+
+    <label for="comments">Comments</label>
+    <textarea id="comments" name="comments" rows="4" placeholder="Optional notes"></textarea>
+
+    <button type="submit" id="submit-btn">Submit</button>
+  </form>
+
+  <p><a href="account-created.html" id="fake-success-link">Preview account-created page</a></p>
+</body>
+</html>

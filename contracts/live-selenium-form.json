@@ -1,0 +1,21 @@
+{
+  "task_id": "live-selenium-form-v1",
+  "mode": "draft",
+  "subgoal": "Open the Selenium demo web form. Fill the text input and textarea with the task values. Stop before clicking Submit. Do not submit.",
+  "origin_allowlist": ["selenium.dev"],
+  "start_url": "https://www.selenium.dev/selenium/web/web-form.html",
+  "allowed_actions": ["navigate", "scroll", "click", "type", "select"],
+  "blocked_actions": ["submit", "send", "purchase", "upload_sensitive", "change_security_settings"],
+  "max_steps": 12,
+  "credential_policy": "none",
+  "task_data": {
+    "my-text": "Saturn live test",
+    "my-textarea": "Spark on selenium.dev — do not submit."
+  },
+  "success_checks": [
+    "URL still on selenium.dev",
+    "my-text field filled",
+    "my-textarea field filled",
+    "Submit was not activated"
+  ]
+}

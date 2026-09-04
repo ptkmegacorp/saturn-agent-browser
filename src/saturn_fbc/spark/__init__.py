@@ -1,0 +1,1 @@
+"""Spark inner-loop adapter."""

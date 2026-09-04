@@ -1,0 +1,23 @@
+{
+  "task_id": "live-httpbin-form-v1",
+  "mode": "draft",
+  "subgoal": "Open the httpbin sample form. Fill custname, custtel, custemail, and comments with the fixture values. Stop before clicking Submit. Do not submit.",
+  "origin_allowlist": ["httpbin.org"],
+  "start_url": "https://httpbin.org/forms/post",
+  "allowed_actions": ["navigate", "scroll", "click", "type"],
+  "blocked_actions": ["submit", "send", "purchase", "upload_sensitive", "change_security_settings"],
+  "max_steps": 10,
+  "credential_policy": "none",
+  "task_data": {
+    "custname": "Saturn Test",
+    "custtel": "555-0100",
+    "custemail": "saturn-test@example.invalid",
+    "comments": "Bounded live test. Do not submit."
+  },
+  "success_checks": [
+    "URL still on httpbin.org/forms/post",
+    "custname visible value is Saturn Test",
+    "custemail visible value is saturn-test@example.invalid",
+    "Submit was not activated"
+  ]
+}
