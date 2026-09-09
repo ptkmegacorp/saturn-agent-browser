@@ -51,7 +51,13 @@ def _token() -> str:
         return ""
 
 
-def _request(method: str, path: str, payload: dict[str, Any] | None = None) -> dict[str, Any]:
+def _request(
+    method: str,
+    path: str,
+    payload: dict[str, Any] | None = None,
+    *,
+    timeout: float = 10,
+) -> dict[str, Any]:
     url = f"{base_url()}{path}"
     data = None
     headers = {"Content-Type": "application/json", "X-Saturn-Consumer": CONSUMER}
@@ -62,8 +68,10 @@ def _request(method: str, path: str, payload: dict[str, Any] | None = None) -> d
         data = json.dumps(payload).encode("utf-8")
     req = urllib.request.Request(url, data=data, headers=headers, method=method)
     try:
-        with urllib.request.urlopen(req, timeout=10) as response:
+        with urllib.request.urlopen(req, timeout=timeout) as response:
             return json.loads(response.read().decode("utf-8"))
+    except TimeoutError:
+        return {"ok": False, "error": "timeout"}
     except urllib.error.HTTPError as err:
         body = err.read().decode("utf-8")
         try:
@@ -84,7 +92,7 @@ def create_login_request(
     document_generation: str | None,
     task_id: str | None,
     idempotency_key: str,
-    expiry_sec: int = 300,
+    expiry_sec: int = 30,
     profile_id: str = "saturn-fbc",
 ) -> AuthRequestView | None:
     payload = {
@@ -170,29 +178,24 @@ def wait_request_state(
     request_id: str,
     *,
     until: tuple[str, ...] = ("approved", "denied", "cancelled", "expired", "failed", "claimed", "filled", "verified"),
-    wait_sec: int = 300,
+    wait_sec: int = 30,
 ) -> AuthRequestView | None:
-    """Long-poll until this request leaves awaiting_user (no sleep loop)."""
+    """Long-poll once for wait_sec (login Approve window). Does not wait forever."""
     peek = get_request(request_id)
     if peek is None:
         return None
     if peek.state in until or peek.state != "awaiting_user":
         return peek
-    since = None
     result = _request("GET", f"/v1/requests/{request_id}")
-    if result.get("ok"):
-        since = result.get("generation")
-    while True:
-        qs = f"?wait=1&wait_sec={max(1, min(wait_sec, 300))}"
-        if since is not None:
-            qs += f"&since={since}"
-        result = _request("GET", f"/v1/requests/{request_id}{qs}")
-        if not result.get("ok"):
-            return get_request(request_id)
-        since = result.get("generation")
-        view = _view(result["request"])
-        if view.state in until or view.state != "awaiting_user":
-            return view
+    since = result.get("generation") if result.get("ok") else None
+    capped = max(1, min(wait_sec, 300))
+    qs = f"?wait=1&wait_sec={capped}"
+    if since is not None:
+        qs += f"&since={since}"
+    result = _request("GET", f"/v1/requests/{request_id}{qs}", timeout=capped + 5)
+    if not result.get("ok"):
+        return get_request(request_id)
+    return _view(result["request"])
 
 
 

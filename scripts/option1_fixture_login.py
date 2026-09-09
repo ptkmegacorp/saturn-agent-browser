@@ -14,10 +14,8 @@ HITL: disposable KeePass + loopback login, live Saturn Auth (:8792), iPhone Appr
 from __future__ import annotations
 
 import argparse
-import json
 import os
 import sys
-import urllib.request
 from datetime import UTC, datetime
 from pathlib import Path
 
@@ -122,26 +120,14 @@ def main() -> int:
                     "  1. Saturn Pi → Reload if needed → Home → Browser auth\n"
                     f"  2. Confirm origin {world.origin} (loopback fixture, not a real site)\n"
                     "  3. Approve to allow one KeePass fill, or Deny to abort\n"
-                    f"Waiting on {rid} via Auth long-poll (no sleep loop).\n",
+                    f"Waiting on {rid} for about 30 seconds (Auth long-poll, no sleep loop).\n",
                     flush=True,
                 )
-                token = Path(os.environ["SATURN_AUTH_FBC_TOKEN_FILE"]).read_text(encoding="utf-8").strip()
-                headers = {"Authorization": f"Bearer {token}"}
-                peek_url = f"{os.environ['SATURN_AUTH_URL']}/v1/requests/{rid}"
-                with urllib.request.urlopen(urllib.request.Request(peek_url, headers=headers), timeout=10) as response:
-                    body = json.loads(response.read().decode("utf-8"))
-                since = body.get("generation")
-                state_name = ((body.get("request") or {}).get("state") or "")
-                print(f"request_state={state_name} generation={since}", flush=True)
-                while state_name in {"", "awaiting_user"}:
-                    qs = f"wait=1&wait_sec=300&since={since}"
-                    url = f"{os.environ['SATURN_AUTH_URL']}/v1/requests/{rid}?{qs}"
-                    with urllib.request.urlopen(urllib.request.Request(url, headers=headers), timeout=310) as response:
-                        body = json.loads(response.read().decode("utf-8"))
-                    since = body.get("generation")
-                    state_name = ((body.get("request") or {}).get("state") or "")
-                    print(f"request_state={state_name} generation={since}", flush=True)
-                if state_name != "approved":
+                from saturn_fbc.auth_client import wait_request_state
+
+                waited = wait_request_state(rid)
+                print(f"request_state={waited.state if waited else 'missing'}", flush=True)
+                if waited is None or waited.state != "approved":
                     print("not approved; stopping before fill")
                     browser.close()
                     return 1

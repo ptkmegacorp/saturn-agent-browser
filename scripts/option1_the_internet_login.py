@@ -86,7 +86,7 @@ def main() -> int:
                 "\n"
                 "iPhone: Saturn Pi → Reload if needed → Home → Browser auth\n"
                 "  Confirm website https://the-internet.herokuapp.com (demo tomsmith)\n"
-                "  Approve, then this process fills, clicks Login, and verifies.\n",
+                "  Approve within about 30 seconds; then this process fills, clicks Login, and verifies.\n",
                 flush=True,
             )
             if first != CredentialFillResult.AWAITING_APPROVAL:
