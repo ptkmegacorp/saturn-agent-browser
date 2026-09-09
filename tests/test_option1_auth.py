@@ -40,8 +40,9 @@ class Option1CredentialPolicyTests(unittest.TestCase):
         self.assertTrue(requires_user_approval(contract))
         self.assertFalse(auto_create_allowed(contract))
 
-    @patch("saturn_fbc.credentials.fill_credential")
-    @patch("saturn_fbc.auth_client.consume_approval", return_value="Sites/example.com--alice--fixture")
+    @patch("saturn_fbc.auth_client.report_outcome", return_value=True)
+    @patch("saturn_fbc.broker.fill_credential")
+    @patch("saturn_fbc.auth_client.consume_result")
     @patch("saturn_fbc.auth_client.get_request")
     @patch("saturn_fbc.auth_client.create_login_request")
     @patch("saturn_fbc.broker.vault_ready", return_value=True)
@@ -52,9 +53,11 @@ class Option1CredentialPolicyTests(unittest.TestCase):
         _vault_ready,
         create_login_request,
         get_request,
-        consume_approval,
+        consume_result,
         fill_credential,
+        report_outcome,
     ) -> None:
+        from saturn_fbc.auth_client import ConsumeResult
         from saturn_fbc.credentials import ensure_credential_filled
 
         create_login_request.return_value = AuthRequestView(
@@ -75,6 +78,10 @@ class Option1CredentialPolicyTests(unittest.TestCase):
             task_id="task-1",
             expires_at="2099-01-01T00:00:00+00:00",
         )
+        consume_result.return_value = ConsumeResult(
+            handle="Sites/example.com--alice--fixture",
+            error=None,
+        )
 
         class FakePage:
             url = "https://example.com/login"
@@ -83,6 +90,92 @@ class Option1CredentialPolicyTests(unittest.TestCase):
         result = ensure_credential_filled(self._contract(), FakePage(), state)
         self.assertEqual(result, CredentialFillResult.FILLED)
         fill_credential.assert_called_once()
+        report_outcome.assert_called_with("auth_test", "filled")
+
+    @patch("saturn_fbc.auth_client.consume_result")
+    @patch("saturn_fbc.auth_client.get_request")
+    @patch("saturn_fbc.auth_client.create_login_request")
+    @patch("saturn_fbc.broker.vault_ready", return_value=True)
+    @patch("saturn_fbc.credentials.password_fields_need_fill", return_value=True)
+    def test_persist_failed_consume_is_retryable(
+        self,
+        _need_fill,
+        _vault_ready,
+        create_login_request,
+        get_request,
+        consume_result,
+    ) -> None:
+        from saturn_fbc.auth_client import ConsumeResult
+        from saturn_fbc.credentials import ensure_credential_filled
+
+        create_login_request.return_value = AuthRequestView(
+            request_id="auth_persist",
+            state="awaiting_user",
+            origin="https://example.com",
+            account_label="alice @ example.com",
+            purpose="login",
+            task_id="task-1",
+            expires_at="2099-01-01T00:00:00+00:00",
+        )
+        get_request.return_value = AuthRequestView(
+            request_id="auth_persist",
+            state="approved",
+            origin="https://example.com",
+            account_label="alice @ example.com",
+            purpose="login",
+            task_id="task-1",
+            expires_at="2099-01-01T00:00:00+00:00",
+        )
+        consume_result.return_value = ConsumeResult(handle=None, error="persist_failed")
+
+        class FakePage:
+            url = "https://example.com/login"
+
+        state = CredentialRunState(handle="Sites/example.com--alice--fixture")
+        result = ensure_credential_filled(self._contract(), FakePage(), state)
+        self.assertEqual(result, CredentialFillResult.AUTH_UNAVAILABLE)
+
+    @patch("saturn_fbc.auth_client.report_outcome", return_value=True)
+    @patch("saturn_fbc.auth_client.get_request")
+    @patch("saturn_fbc.auth_client.create_login_request")
+    @patch("saturn_fbc.broker.vault_ready", return_value=True)
+    @patch("saturn_fbc.credentials.password_fields_need_fill", return_value=True)
+    def test_claimed_without_fill_reports_uncertain(
+        self,
+        _need_fill,
+        _vault_ready,
+        create_login_request,
+        get_request,
+        report_outcome,
+    ) -> None:
+        from saturn_fbc.credentials import ensure_credential_filled
+
+        create_login_request.return_value = AuthRequestView(
+            request_id="auth_claimed",
+            state="awaiting_user",
+            origin="https://example.com",
+            account_label="alice @ example.com",
+            purpose="login",
+            task_id="task-1",
+            expires_at="2099-01-01T00:00:00+00:00",
+        )
+        get_request.return_value = AuthRequestView(
+            request_id="auth_claimed",
+            state="claimed",
+            origin="https://example.com",
+            account_label="alice @ example.com",
+            purpose="login",
+            task_id="task-1",
+            expires_at="2099-01-01T00:00:00+00:00",
+        )
+
+        class FakePage:
+            url = "https://example.com/login"
+
+        state = CredentialRunState(handle="Sites/example.com--alice--fixture")
+        result = ensure_credential_filled(self._contract(), FakePage(), state)
+        self.assertEqual(result, CredentialFillResult.AUTH_DENIED)
+        report_outcome.assert_called_with("auth_claimed", "failed", "uncertain_delivery")
 
     @patch("saturn_fbc.auth_client.get_request")
     @patch("saturn_fbc.auth_client.create_login_request")
@@ -115,6 +208,31 @@ class Option1CredentialPolicyTests(unittest.TestCase):
         result = ensure_credential_filled(self._contract(), FakePage(), state)
         self.assertEqual(result, CredentialFillResult.AWAITING_APPROVAL)
         self.assertEqual(state.auth_request_id, "auth_wait")
+
+    @patch("saturn_fbc.auth_client.report_outcome", return_value=True)
+    def test_independent_verify_reports_verified(self, report_outcome) -> None:
+        from saturn_fbc.credentials import CredentialRunState, report_login_verification
+
+        class FakeLocator:
+            def count(self):
+                return 1
+
+            @property
+            def first(self):
+                return self
+
+            def is_visible(self):
+                return True
+
+        class FakePage:
+            def locator(self, selector):
+                return FakeLocator()
+
+        page = FakePage()
+        state = CredentialRunState(auth_request_id="auth_verify")
+        self.assertTrue(report_login_verification(self._contract(success_checks=["#logged-in"]), page, state))
+        report_outcome.assert_called_with("auth_verify", "verified")
+        self.assertIn("auth_request_verified:auth_verify", state.events)
 
 
 if __name__ == "__main__":

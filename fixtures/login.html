@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Fixture login</title>
+  <style>
+    body { font-family: system-ui, sans-serif; max-width: 32rem; margin: 2rem auto; padding: 0 1rem; }
+    label { display: block; margin-top: 1rem; font-weight: 600; }
+    input { width: 100%; padding: 0.5rem; margin-top: 0.25rem; box-sizing: border-box; }
+    button { margin-top: 1.5rem; }
+  </style>
+</head>
+<body>
+  <h1>Sign in (broker fixture)</h1>
+  <p>Synthetic existing-credential login. No real site.</p>
+  <form id="login-form" method="post" action="/session">
+    <label for="username">Username</label>
+    <input id="username" name="username" type="text" autocomplete="username">
+    <label for="password">Password</label>
+    <input id="password" name="password" type="password" autocomplete="current-password">
+    <button type="submit" id="login-btn">Log in</button>
+  </form>
+</body>
+</html>

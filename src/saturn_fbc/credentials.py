@@ -2,12 +2,14 @@
 
 from __future__ import annotations
 
+import os
 from dataclasses import dataclass, field
 from enum import Enum
 from urllib.parse import urlparse
 
 from playwright.sync_api import Page
 
+from saturn_fbc.browser.live_bindings import read_live_bindings
 from saturn_fbc.contract import AuthorityContract, BrowserAction
 from saturn_fbc.credential_selectors import PASSWORD_SELECTORS
 
@@ -20,6 +22,7 @@ class CredentialFillResult(str, Enum):
     NO_PASSWORD_FIELD = "no_password_field"
     AWAITING_APPROVAL = "awaiting_approval"
     AUTH_DENIED = "auth_denied"
+    AUTH_UNAVAILABLE = "auth_unavailable"
 
 
 @dataclass
@@ -112,18 +115,28 @@ def auto_create_allowed(contract: AuthorityContract) -> bool:
 
 def _page_origin(page: Page) -> str:
     parsed = urlparse(page.url)
-    host = (parsed.hostname or "").lower().removeprefix("www.")
-    scheme = parsed.scheme or "https"
-    port = f":{parsed.port}" if parsed.port else ""
-    return f"{scheme}://{host}{port}"
+    scheme = (parsed.scheme or "").lower()
+    host = (parsed.hostname or "").lower()
+    if scheme not in {"http", "https"} or not host:
+        return page.url
+    port = parsed.port
+    if port is None:
+        port = 443 if scheme == "https" else 80
+    if (scheme == "https" and port == 443) or (scheme == "http" and port == 80):
+        return f"{scheme}://{host}"
+    return f"{scheme}://{host}:{port}"
 
 
-def _binding_ids(contract: AuthorityContract, state: CredentialRunState) -> tuple[str, str | None, str | None]:
+PROFILE_ID = "saturn-fbc"
+
+
+def _binding_ids(contract: AuthorityContract, state: CredentialRunState, page: Page) -> tuple[str, str, str, str, str]:
     run_id = contract.run_id or contract.task_id
-    browser_session_id = state.browser_session_id or run_id
-    tab_id = state.tab_id
-    document_generation = state.document_generation
-    return browser_session_id, tab_id, document_generation
+    browser_session_id, tab_id, document_generation = read_live_bindings(page)
+    state.browser_session_id = browser_session_id
+    state.tab_id = tab_id
+    state.document_generation = document_generation
+    return run_id, PROFILE_ID, browser_session_id, tab_id, document_generation
 
 
 def ensure_credential_filled(
@@ -168,6 +181,40 @@ def ensure_credential_filled(
     return CredentialFillResult.FILLED
 
 
+def pi_click_enabled() -> bool:
+    return os.environ.get("SATURN_FBC_PI_CLICK", "").strip() == "1"
+
+
+def fill_with_operator_gate(
+    contract: AuthorityContract,
+    page: Page,
+    state: CredentialRunState,
+) -> CredentialFillResult:
+    """Fixture/test helper: fill, then Saturn Pi Approve for this request id only.
+
+    Production spark/visual loops do not call this. Requires SATURN_FBC_PI_CLICK=1
+    and an exact auth_request_id (never the first pending card).
+    """
+    result = ensure_credential_filled(contract, page, state)
+    if result != CredentialFillResult.AWAITING_APPROVAL or not pi_click_enabled():
+        return result
+    if not state.auth_request_id:
+        return result
+    from saturn_fbc.auth_client import wait_request_state
+    from saturn_fbc.pi_operator_click import click_browser_auth_approve
+
+    try:
+        click_browser_auth_approve(request_id=state.auth_request_id)
+    except Exception:
+        return CredentialFillResult.AUTH_UNAVAILABLE
+    waited = wait_request_state(state.auth_request_id)
+    if waited is None:
+        return CredentialFillResult.AUTH_UNAVAILABLE
+    if waited.state in ("denied", "cancelled", "expired", "failed"):
+        return CredentialFillResult.AUTH_DENIED
+    return ensure_credential_filled(contract, page, state)
+
+
 def _ensure_approval_and_fill(
     contract: AuthorityContract,
     page: Page,
@@ -177,7 +224,7 @@ def _ensure_approval_and_fill(
 
     assert state.handle is not None
     run_id = contract.run_id or contract.task_id
-    browser_session_id, tab_id, document_generation = _binding_ids(contract, state)
+    run_id, profile_id, browser_session_id, tab_id, document_generation = _binding_ids(contract, state, page)
     idempotency_key = f"{run_id}:{state.handle}"
 
     if state.auth_request_id is None:
@@ -185,6 +232,7 @@ def _ensure_approval_and_fill(
             credential_handle=state.handle,
             allowed_origin=_page_origin(page),
             run_id=run_id,
+            profile_id=profile_id,
             browser_session_id=browser_session_id,
             tab_id=tab_id,
             document_generation=document_generation,
@@ -205,31 +253,88 @@ def _ensure_approval_and_fill(
     if current.state in {"denied", "cancelled", "expired", "failed"}:
         state.events.append(f"auth_request_{current.state}:{state.auth_request_id}")
         return CredentialFillResult.AUTH_DENIED
+    if current.state == "claimed":
+        auth_client.report_outcome(state.auth_request_id, "failed", "uncertain_delivery")
+        state.events.append(f"auth_request_uncertain_delivery:{state.auth_request_id}")
+        return CredentialFillResult.AUTH_DENIED
+    if current.state in {"filled", "verified"}:
+        state.events.append(f"auth_request_{current.state}:{state.auth_request_id}")
+        return CredentialFillResult.FILLED
     if current.state == "delivered":
         state.events.append(f"auth_request_already_delivered:{state.auth_request_id}")
-        return CredentialFillResult.FILLED
+        return CredentialFillResult.AUTH_DENIED
 
     if current.state != "approved":
         return CredentialFillResult.AWAITING_APPROVAL
 
-    consumed_handle = auth_client.consume_approval(
+    consumed = auth_client.consume_result(
         state.auth_request_id,
+        run_id=run_id,
+        profile_id=profile_id,
         browser_session_id=browser_session_id,
         tab_id=tab_id,
         document_generation=document_generation,
-        current_origin=page.url,
+        current_origin=_page_origin(page),
     )
+    if consumed.error == "persist_failed":
+        state.events.append(f"auth_persist_failed:{state.auth_request_id}")
+        return CredentialFillResult.AUTH_UNAVAILABLE
+    consumed_handle = consumed.handle
     if not consumed_handle:
         return CredentialFillResult.AUTH_DENIED
     if consumed_handle != state.handle:
+        auth_client.report_outcome(state.auth_request_id, "failed", "handle_mismatch")
         return CredentialFillResult.AUTH_DENIED
 
     from saturn_fbc.broker import fill_credential
 
-    fill_credential(consumed_handle, page=page)
+    try:
+        fill_credential(consumed_handle, page=page)
+    except Exception as err:
+        auth_client.report_outcome(state.auth_request_id, "failed", "fill_exception")
+        state.events.append(f"credential_fill_failed:{err.__class__.__name__}")
+        return CredentialFillResult.AUTH_DENIED
+    if not auth_client.report_outcome(state.auth_request_id, "filled"):
+        return CredentialFillResult.AUTH_DENIED
     state.filled = True
     state.events.append(f"credential_filled_after_approval:{consumed_handle}")
     return CredentialFillResult.FILLED
+
+
+def page_matches_success(page: Page, contract: AuthorityContract) -> bool:
+    """Independent logged-in check from contract.success_checks (not the fill path)."""
+    for selector in contract.success_checks:
+        if not selector:
+            continue
+        try:
+            loc = page.locator(selector)
+            if loc.count() == 0:
+                continue
+            if loc.first.is_visible():
+                return True
+        except Exception:
+            continue
+    return False
+
+
+def report_login_verification(
+    contract: AuthorityContract,
+    page: Page,
+    state: CredentialRunState,
+) -> bool:
+    """Report verified or failed after an independent success-check. Does not fill."""
+    from saturn_fbc import auth_client
+
+    if not state.auth_request_id:
+        return False
+    if page_matches_success(page, contract):
+        if not auth_client.report_outcome(state.auth_request_id, "verified"):
+            return False
+        state.events.append(f"auth_request_verified:{state.auth_request_id}")
+        return True
+    auth_client.report_outcome(state.auth_request_id, "failed", "login_not_verified")
+    state.events.append("auth_request_verify_failed")
+    return False
 
 
 def is_password_type_action(page: Page, action: BrowserAction, snapshot) -> bool:

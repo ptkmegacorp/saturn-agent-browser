@@ -123,6 +123,11 @@ def run_spark_loop(
                     message = "Agent vault not ready for broker fill"
                     session.stop(stop_reason, message=message)
                     break
+                if fill_result == CredentialFillResult.AUTH_UNAVAILABLE:
+                    stop_reason = StopReason.CREDENTIAL_REQUIRED
+                    message = "Auth service unavailable"
+                    session.stop(stop_reason, message=message)
+                    break
                 if fill_result == CredentialFillResult.MISSING_SPEC:
                     stop_reason = StopReason.CREDENTIAL_REQUIRED
                     message = "Password field visible; set credential_spec or task_data.email"

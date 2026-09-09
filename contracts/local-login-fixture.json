@@ -1,0 +1,18 @@
+{
+  "task_id": "option1-fixture-login",
+  "run_id": "option1-fixture-login",
+  "mode": "draft",
+  "subgoal": "Log in with an existing synthetic credential after user approval",
+  "origin_allowlist": ["127.0.0.1"],
+  "allowed_actions": ["click", "type", "navigate"],
+  "blocked_actions": ["evaluate"],
+  "max_steps": 8,
+  "credential_policy": "existing_only",
+  "credential_spec": {
+    "domain": "127.0.0.1",
+    "username": "alice",
+    "label": "fixture",
+    "handle": "Sites/127.0.0.1--alice--fixture"
+  },
+  "success_checks": ["#logged-in"]
+}

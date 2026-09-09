@@ -108,6 +108,48 @@ def create_entry(domain: str, username: str, label: str, *, length: int = 24) ->
     return CredentialRecord(handle=path, username=record.username, password=record.password, url=record.url)
 
 
+def create_entry_with_password(
+    domain: str,
+    username: str,
+    label: str,
+    entry_password: str,
+    *,
+    url: str | None = None,
+) -> CredentialRecord:
+    """Create a vault entry with a known password (disposable fixture vaults)."""
+    if not vault_ready():
+        raise RuntimeError(f"Agent vault not ready: {agent_kdbx_path()} + {vault_key_file()}")
+    if not entry_password:
+        raise RuntimeError("entry password required")
+    ensure_sites_group()
+    master = read_master_password()
+    kdbx = agent_kdbx_path()
+    path = entry_path(domain, username, label)
+    target_url = url or f"https://{domain}"
+    result = subprocess.run(
+        [
+            "keepassxc-cli",
+            "add",
+            "-q",
+            "-p",
+            "-u",
+            username,
+            "--url",
+            target_url,
+            str(kdbx),
+            path,
+        ],
+        input=f"{master}\n{entry_password}\n{entry_password}\n",
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    if result.returncode != 0:
+        raise RuntimeError(result.stderr.strip() or result.stdout.strip() or "keepassxc-cli add failed")
+    record = load_entry(path)
+    return CredentialRecord(handle=path, username=record.username, password=record.password, url=record.url)
+
+
 def load_entry(handle: str) -> CredentialRecord:
     password = read_master_password()
     kdbx = agent_kdbx_path()
