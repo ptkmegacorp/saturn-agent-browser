@@ -100,6 +100,29 @@ Use `run-skeleton` for scripted fills without loading the VLM.
 | Window class (i3) | `SaturnFrontierBrowser` |
 | Launch | Playwright persistent context with that user-data dir; **no** `channel="chrome"` / `channel="chromium"` |
 
+## Trusted Chrome (shipped 2026-09-09)
+
+Official **Google Chrome stable** (`/usr/bin/google-chrome-stable`, 153.0.8010.36 on Saturn) with a dedicated FBC profile. The window lives on HDMI (`SaturnTrustedChrome`). Saturn Pi **Browser** (not **Browser auth**) snapshots this lane over loopback CDP **`:9223`**. Isolated Playwright Chromium stays on **`:9222`**. Extension relay is **not** installed. the operator’s daily Firefox/Chrome profiles are unused.
+
+CDP on the dedicated profile is the compromise that lets SSH / iPhone see the real Chrome tab. `--headless` remains forbidden. Chrome 136+ only allows remote debugging with a non-default `--user-data-dir` (this profile). `browser trusted start` restarts Chrome if it is running without a healthy CDP.
+
+| Resource | Path / rule |
+|----------|-------------|
+| Profile | `~/.local/share/saturn-frontier-browser-control/trusted-chrome/` |
+| Binary | `/usr/bin/google-chrome-stable` (`scripts/install-google-chrome.sh`) |
+| Sandbox | `/opt/google/chrome/chrome-sandbox` setuid root (`4755`) — no `--no-sandbox` |
+| Window class | `SaturnTrustedChrome` |
+| CDP | `http://127.0.0.1:9223` (`SATURN_FBC_TRUSTED_CDP_PORT`) |
+| CLI | `browser trusted start\|status\|stop` · `browser profiles` · `browser view\|snapshot\|navigate --lane trusted` |
+| Forbidden | `--headless`, Playwright user-data dir, daily browser profile |
+
+```bash
+./scripts/install-google-chrome.sh
+./scripts/install-trusted-browser-profile.sh
+saturn-frontier-browser-control browser trusted start
+saturn-frontier-browser-control browser view --lane trusted
+```
+
 KeePassXC-Browser is **optional** (`CREDENTIAL_FILL=keepassxc-browser`). Default is broker fill. If used, the extension is installed **only** into this profile.
 
 ## Observation
@@ -190,10 +213,12 @@ A run switches pig-stack to this profile and **hides HUD overlay**; profile stay
 
 ## Harness (Cursor only)
 
-CLI: `~/bin/saturn-frontier-browser-control`. Cursor skill only — **not** wired into Pig/Pi. Commands: `status`, `browser start|stop|status|restart`, `run --contract`, `wait`, `last`, `abort`, `escalate-last`.
+CLI: `~/bin/saturn-frontier-browser-control`. Cursor skill only — **not** wired into Pig/Pi. Commands: `status`, `browser start|stop|status|restart`, `browser trusted start|stop|status`, `browser profiles`, `browser view|snapshot|navigate|control`, `run --contract`, `wait`, `last`, `abort`, `escalate-last`. The Saturn Pi capsule calls `view` / `snapshot` / `navigate` (CLI default lane is **isolated**; the Pi panel defaults to **trusted**).
 
 Headed runs attach to a **persistent browser daemon** (CDP). Start it explicitly with `browser start`, or let `run` / `run-skeleton` auto-start when `SATURN_FBC_BROWSER_MODE=daemon`. Headless/CI uses ephemeral launch-close (`--headless` or `SATURN_FBC_BROWSER_MODE=ephemeral`).
 
 ## Status
 
 V1 scaffold is **on Saturn** (2026-09): isolated Chromium, authority contracts, broker, llama-server recipe + weights. **Venus loop port** (prompt/parser/executor from `venus_browser.py`) is the active integration step — interim generic JSON client is deprecated. Spark retired 2026-09-06.
+
+**2026-09-09 evening:** trusted Chrome + Pi snapshot panel are live. Auth option-1 HITL (the-internet Approve → fill → verified login) still stands. Not done: OpenClaw extension relay, streaming/inspect, Indeed login measured on this CDP-on-dedicated-profile shape, Face ID for vault writes.

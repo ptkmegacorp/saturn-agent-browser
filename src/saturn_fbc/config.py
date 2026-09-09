@@ -17,7 +17,7 @@ def _load_env_files() -> dict[str, str]:
     if not CONFIG_DIR.is_dir():
         return merged
     for path in sorted(CONFIG_DIR.glob("*.env")):
-        for key, value in dotenv_values(path).items():
+        for key, value in dotenv_values(path, interpolate=False).items():
             if value is not None:
                 merged[key] = value
     return merged
@@ -28,7 +28,13 @@ def _expand_config_paths() -> None:
     share = os.environ.get("SATURN_FBC_SHARE")
     if share:
         os.environ["SATURN_FBC_SHARE"] = os.path.expandvars(os.path.expanduser(share))
-    for key in ("SATURN_FBC_CHROMIUM_USER_DATA", "PLAYWRIGHT_BROWSERS_PATH"):
+    for key in (
+        "SATURN_FBC_CHROMIUM_USER_DATA",
+        "PLAYWRIGHT_BROWSERS_PATH",
+        "SATURN_FBC_TRUSTED_PROFILE",
+        "SATURN_FBC_TRUSTED_EXECUTABLE",
+        "SATURN_FBC_TRUSTED_STATE",
+    ):
         val = os.environ.get(key)
         if val:
             os.environ[key] = os.path.expandvars(val)
@@ -126,3 +132,57 @@ def headed_hold_seconds() -> int:
 
 def traces_dir() -> Path:
     return PROJECT_ROOT / "traces"
+
+
+CANDIDATE_TRUSTED_EXECUTABLES = (
+    "/usr/bin/google-chrome-stable",
+    "/usr/bin/google-chrome",
+    "~/.local/opt/google-chrome-stable/opt/google/chrome/google-chrome",
+    "/usr/bin/brave-browser",
+)
+
+
+def trusted_executable() -> Path | None:
+    load_config()
+    explicit = os.environ.get("SATURN_FBC_TRUSTED_EXECUTABLE")
+    if explicit:
+        path = Path(os.path.expandvars(os.path.expanduser(explicit)))
+        return path if path.is_file() and os.access(path, os.X_OK) else None
+    for candidate in CANDIDATE_TRUSTED_EXECUTABLES:
+        path = Path(candidate)
+        if path.is_file() and os.access(path, os.X_OK):
+            return path
+    return None
+
+
+def trusted_profile_dir() -> Path:
+    load_config()
+    raw = os.environ.get("SATURN_FBC_TRUSTED_PROFILE")
+    if raw:
+        return Path(os.path.expandvars(os.path.expanduser(raw)))
+    return share_dir() / "trusted-chrome"
+
+
+def trusted_state_path() -> Path:
+    load_config()
+    raw = os.environ.get("SATURN_FBC_TRUSTED_STATE")
+    if raw:
+        return Path(os.path.expandvars(os.path.expanduser(raw)))
+    return share_dir() / "trusted-browser-state.json"
+
+
+def trusted_wm_class() -> str:
+    return get("SATURN_FBC_TRUSTED_NAME", "SaturnTrustedChrome") or "SaturnTrustedChrome"
+
+
+def trusted_cdp_port() -> int:
+    load_config()
+    raw = os.environ.get("SATURN_FBC_TRUSTED_CDP_PORT", "9223") or "9223"
+    try:
+        return max(1, min(65535, int(raw)))
+    except ValueError:
+        return 9223
+
+
+def trusted_cdp_url() -> str:
+    return f"http://127.0.0.1:{trusted_cdp_port()}"

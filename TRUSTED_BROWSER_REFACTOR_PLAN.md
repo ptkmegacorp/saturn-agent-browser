@@ -1,7 +1,7 @@
 # Trusted-browser refactor and reconfiguration plan
 
 **Project:** Saturn Frontier Browser Control (FBC)  
-**Status:** approved direction; implementation pending  
+**Status:** Phase 0 launch + Pi snapshot CDP **shipped 2026-09-09**. Extension relay and Indeed acceptance gates still pending.  
 **Primary target:** improve success on Indeed and similarly bot-sensitive sites through a normal persistent browser session, human authentication, and extension-based control  
 **Audience:** implementation agents, reviewers, and operators
 
@@ -13,7 +13,16 @@ Read [OPENCLAW_INTEGRATION_BUILD_PLAN.md](docs/OPENCLAW_INTEGRATION_BUILD_PLAN.m
 
 The two-lane design below remains the target. Its bespoke extension/protocol tree, native-messaging action transport, HDMI-only login ownership and phase order are earlier proposals superseded where the shared plan specifies OpenClaw reuse and remote UI integration. Preserve reusable upstream extension/relay code and its tests, with a dedicated Saturn extension identity and selected-tab access. Evaluate an FBC-owned JS/TS sidecar before rewriting upstream machinery in Python. Native messaging handles bootstrap; authenticated relay transport carries browser operations.
 
-HDMI remains the initial sensitive-login/challenge surface. The Pi capsule supplies protected Auth forms and ordinary browser viewing/control; any remote sensitive viewer requires the shared plan's separate security review. Saturn Auth owns credential approval/provider coordination; FBC owns protected browser adaptation, verification and task continuation.
+HDMI remains the initial sensitive-login/challenge surface. As of 2026-09-09 the Pi **Browser** panel snapshots the trusted Chrome tab over loopback CDP `:9223` (SSH / iPhone). That is a measured compromise versus “no CDP until login is done”; the profile is still dedicated FBC, not the daily browser. Extension control is not installed. Saturn Auth owns credential approval/provider coordination; FBC owns protected browser adaptation, verification and task continuation.
+
+### Current browser shape (2026-09-09 evening)
+
+| Lane | Browser | Profile | CDP | Pi panel |
+|------|---------|---------|-----|----------|
+| Isolated | Playwright Chromium | `…/chromium/` | `:9222` | **Isolated** |
+| Trusted | Google Chrome stable 153 (`/usr/bin/google-chrome-stable`) | `…/trusted-chrome/` | `:9223` | **Chrome** (panel default) |
+
+CLI: `browser trusted start|status|stop`, `browser view --lane trusted`. Code: `src/saturn_fbc/browser/trusted.py`, `config/trusted-browser.env`. Pi: `modules/saturn-fbc-browser-web-ui`.
 
 ## 1. Goal
 

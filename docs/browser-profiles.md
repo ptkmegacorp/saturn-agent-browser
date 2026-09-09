@@ -1,10 +1,10 @@
 # Browser profiles (design sketch)
 
-**Status:** design / not implemented  
+**Status:** two lanes exist (2026-09-09). Isolated Playwright Chromium (`:9222`) plus dedicated Google Chrome (`:9223` for Pi snapshots). Extension relay / Indeed acceptance still not implemented.  
 **Goal:** Mirror [OpenClaw’s multi-profile model](openclaw-comparison.md) on Saturn — isolated agent browser for bounded runs, separate lane for human login on bot-sensitive sites (Indeed, Google SSO, Cloudflare).  
 **Implementation handoff:** [`../TRUSTED_BROWSER_REFACTOR_PLAN.md`](../TRUSTED_BROWSER_REFACTOR_PLAN.md)
 
-Today Saturn FBC has **one profile**: isolated Playwright Chromium + persistent CDP daemon (`~/.local/share/saturn-frontier-browser-control/chromium/`). That is correct for httpbin fixtures and disposable signups. It is the **wrong default** for Indeed login bootstrap when Turnstile or Google OAuth blocks the automation browser.
+Saturn FBC no longer has a single profile. Isolated Playwright Chromium + daemon (`…/chromium/`, CDP `:9222`) remains the automation/fixture lane. Trusted Google Chrome (`…/trusted-chrome/`, CDP `:9223`) is the Pi **Browser** default. Daily Firefox/Chrome are still unused. Indeed login on the trusted lane with CDP on is **unmeasured**.
 
 ---
 

@@ -14,9 +14,29 @@ Git checkpoint (local `main`):
 
 FBC and saturn-pi were ahead of `origin/main` at this checkpoint and were not pushed as part of recording it.
 
+## Progress checkpoint (2026-09-09 evening — Chrome on Saturn Pi)
+
+Stopped for the day with the **trusted Google Chrome** window visible in Saturn Pi **Browser** (iPhone / SSH), not only on HDMI.
+
+Shipped:
+
+- Official Chrome stable, dedicated profile `…/trusted-chrome/`, window class `SaturnTrustedChrome`, setuid sandbox (no `--no-sandbox`).
+- Loopback CDP **`:9223`** for Pi snapshots (`browser view|snapshot --lane trusted`). Isolated Playwright remains **`:9222`**.
+- Saturn Pi **Browser** overlay defaults to the **Chrome** lane (Isolated | Chrome). Distinct from **Browser auth**.
+- Human-gated allowlisted navigate; streaming and inspect still off.
+- Verified locally with `saturn-pi ui` 390×844: Google new-tab snapshot under Chrome.
+
+Still queued: OpenClaw-derived extension relay, Indeed/Cloudflare measured on this CDP shape, streaming/inspect, Face ID for new vault writes.
+
+Git checkpoint (filled after the evening `main` commits):
+
+- saturn-frontier-browser-control — see `main` after 2026-09-09 evening push
+- saturn-pi — see `main` after 2026-09-09 evening push (deployed; iPhone Saturn menu **Reload**)
+- saturn-auth `f734a3b` / `ff036e5` — unchanged this evening
+
 ## Required host conventions
 
-Read `~/saturn/SATURN_CONVENTIONS.md` before implementing any work package. Apply its simple Unix-style composition, clean stdout/stderr, explicit process/state ownership and core-preserving extension defaults. Saturn Pi presentation follows its shared module panel convention; feature behavior stays in the owning capsule. Cite this reference in agent handoffs and record necessary exceptions with tests.
+Read `~/saturn/saturn-dotfiles/docs/SATURN_CONVENTIONS.md` before implementing any work package. Apply its simple Unix-style composition, clean stdout/stderr, explicit process/state ownership and core-preserving extension defaults. Saturn Pi presentation follows its shared module panel convention; feature behavior stays in the owning capsule. Cite this reference in agent handoffs and record necessary exceptions with tests.
 
 ## Canonical names and ownership
 

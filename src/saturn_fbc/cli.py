@@ -16,7 +16,13 @@ from saturn_fbc.browser.daemon import (
     start_browser,
     stop_browser,
 )
-from saturn_fbc.browser.view import capture_snapshot, read_view
+from saturn_fbc.browser.trusted import (
+    list_browser_profiles,
+    start_trusted,
+    stop_trusted,
+    trusted_status,
+)
+from saturn_fbc.browser.view import capture_snapshot, navigate_tab, read_view, set_panel_control
 from saturn_fbc.config import load_config
 from saturn_fbc.contract import load_contract
 from saturn_fbc.escalate import dispatch_luna
@@ -26,7 +32,9 @@ from saturn_fbc.specialist import SpecialistNotConfiguredError, propose_visual_a
 
 app = typer.Typer(no_args_is_help=True, help="Saturn frontier browser control")
 browser_app = typer.Typer(no_args_is_help=True, help="Persistent headed Chromium daemon")
+trusted_app = typer.Typer(no_args_is_help=True, help="Trusted Google Chrome lane (CDP :9223 for Pi snapshots)")
 app.add_typer(browser_app, name="browser")
+browser_app.add_typer(trusted_app, name="trusted")
 
 
 @app.callback()
@@ -62,18 +70,52 @@ def browser_restart_cmd(
     _json_out(restart_browser(wait_timeout=wait_timeout))
 
 
+@browser_app.command("profiles")
+def browser_profiles_cmd() -> None:
+    _json_out(list_browser_profiles())
+
+
+@trusted_app.command("status")
+def trusted_status_cmd() -> None:
+    _json_out(trusted_status())
+
+
+@trusted_app.command("start")
+def trusted_start_cmd(
+    url: str = typer.Option("chrome://newtab/", "--url", help="Initial tab (no javascript: URLs)"),
+) -> None:
+    if url.strip().lower().startswith("javascript:"):
+        _json_out({"ok": False, "error": "invalid_url"})
+        raise typer.Exit(code=1)
+    result = start_trusted(url=url)
+    _json_out(result)
+    if not result.get("ok"):
+        raise typer.Exit(code=1)
+
+
+@trusted_app.command("stop")
+def trusted_stop_cmd() -> None:
+    _json_out(stop_trusted())
+
+
 @browser_app.command("view")
-def browser_view_cmd() -> None:
+def browser_view_cmd(
+    lane: str = typer.Option("isolated", "--lane", help="isolated or trusted"),
+) -> None:
     """Read-only tabs/status for the Saturn Pi snapshot panel."""
-    _json_out(read_view())
+    _json_out(read_view(lane))
 
 
 @browser_app.command("snapshot")
 def browser_snapshot_cmd(
     tab_id: str = typer.Option(..., "--tab-id", help="Exact tab id from browser view"),
     out: Path = typer.Option(..., "--out", help="PNG destination path"),
+    generation: str | None = typer.Option(
+        None, "--generation", help="Expected document_generation from browser view"
+    ),
+    lane: str = typer.Option("isolated", "--lane", help="isolated or trusted"),
 ) -> None:
-    result = capture_snapshot(tab_id)
+    result = capture_snapshot(tab_id, expected_generation=generation, lane=lane)
     if not result.get("ok"):
         _json_out({k: v for k, v in result.items() if k != "png"})
         raise typer.Exit(code=1)
@@ -89,6 +131,29 @@ def browser_snapshot_cmd(
             "title": result["title"],
         }
     )
+
+
+@browser_app.command("control")
+def browser_control_cmd(
+    mode: str = typer.Option(..., "--mode", help="human or agent"),
+) -> None:
+    result = set_panel_control(mode)
+    _json_out(result)
+    if not result.get("ok"):
+        raise typer.Exit(code=1)
+
+
+@browser_app.command("navigate")
+def browser_navigate_cmd(
+    tab_id: str = typer.Option(..., "--tab-id", help="Exact tab id from browser view"),
+    url: str = typer.Option(..., "--url", help="http(s) URL on the panel allowlist"),
+    generation: str = typer.Option(..., "--generation", help="Expected document_generation"),
+    lane: str = typer.Option("isolated", "--lane", help="isolated or trusted"),
+) -> None:
+    result = navigate_tab(tab_id, url, generation, lane=lane)
+    _json_out(result)
+    if not result.get("ok"):
+        raise typer.Exit(code=1)
 
 
 @app.command("version")
