@@ -10,7 +10,7 @@ from saturn_fbc import config
 from saturn_fbc.contract import StopReason, load_contract
 from saturn_fbc.pig_stack import status_payload
 from saturn_fbc.skeleton import run_skeleton
-from saturn_fbc.spark.loop import RunResult, run_contract_path
+from saturn_fbc.visual.loop import RunResult, run_contract_path
 
 
 STATE_FILE = config.PROJECT_ROOT / ".last-run.json"
@@ -50,7 +50,7 @@ def run_contract(
     *,
     headless: bool | None = None,
     skip_gpu: bool = False,
-    mode: str = "spark",
+    mode: str = "visual",
 ) -> RunResult:
     if mode == "skeleton":
         trace_dir = run_skeleton(contract_path=contract_path, headless=headless)

@@ -23,7 +23,7 @@ def _run(args: list[str]) -> dict:
     return json.loads(result.stdout)
 
 
-@pytest.mark.parametrize("args", [["status"], ["broker-status"], ["last"]])
+@pytest.mark.parametrize("args", [["status"], ["broker-status"], ["broker-setup"], ["last"]])
 def test_cli_json_commands(args: list[str]):
     payload = _run(args)
     assert isinstance(payload, dict)

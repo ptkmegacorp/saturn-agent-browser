@@ -10,12 +10,14 @@ from pathlib import Path
 from playwright.sync_api import BrowserContext, Page, Playwright
 
 from saturn_fbc import config
+from saturn_fbc.actions import ActionRejectedError
 from saturn_fbc.browser.capture import capture_a11y_indexed, capture_screenshot
 from saturn_fbc.browser.executor import execute_action
 from saturn_fbc.browser.interceptor import current_url_allowed, intercept_action
 from saturn_fbc.browser.profile import acquire_browser_context, release_browser_context
 from saturn_fbc.browser.trace import TraceWriter
 from saturn_fbc.contract import AuthorityContract, BrowserAction, StepRecord, StopReason
+from saturn_fbc.credentials import is_password_type_action, policy_active
 
 
 class BrowserSession:
@@ -116,6 +118,8 @@ class BrowserSession:
         self.step += 1
         validated = intercept_action(self.contract, action)
         snap = capture_a11y_indexed(self.page)
+        if policy_active(self.contract) and is_password_type_action(self.page, validated, snap):
+            raise ActionRejectedError("Password fields are filled by the broker only")
         try:
             result = execute_action(self.page, validated, snapshot=snap)
             record = StepRecord(

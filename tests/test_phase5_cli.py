@@ -46,7 +46,28 @@ def test_cli_broker_status():
     assert "vault_ready" in json.loads(result.stdout)
 
 
-def test_cli_specialist_status():
+def test_cli_broker_create_requires_vault(monkeypatch, tmp_path):
+    monkeypatch.setenv("AGENT_KDBX", str(tmp_path / "missing.kdbx"))
+    result = runner.invoke(
+        app,
+        [
+            "broker-create",
+            "--domain",
+            "example.com",
+            "--username",
+            "user@example.com",
+            "--label",
+            "test",
+        ],
+    )
+    assert result.exit_code != 0
+
+
+def test_cli_specialist_status(monkeypatch):
+    monkeypatch.setattr(
+        "saturn_fbc.specialist.specialist_configured",
+        lambda: False,
+    )
     result = runner.invoke(app, ["specialist-status"])
     assert result.exit_code == 0
     payload = json.loads(result.stdout)

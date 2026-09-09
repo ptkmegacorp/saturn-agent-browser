@@ -1,0 +1,18 @@
+{
+  "_comment": "Reusable Indeed applicant facts. Copy into contract task_data per job. No passwords — login is human + Chromium profile cookies.",
+  "name": "Example Applicant",
+  "email": "you@example.com",
+  "phone": "555-0100",
+  "city": "Austin",
+  "state": "TX",
+  "zip": "78701",
+  "linkedin_url": "https://www.linkedin.com/in/example",
+  "website": "",
+  "years_experience": "10",
+  "work_authorization": "Yes — authorized to work in the US without sponsorship",
+  "require_sponsorship": "No",
+  "salary_expectation": "Negotiable based on total compensation",
+  "earliest_start_date": "2 weeks notice",
+  "cover_letter_snippet": "Short paragraph Luna can expand per job — role-specific version goes in the per-job contract.",
+  "eeo_optional": "Decline to answer"
+}

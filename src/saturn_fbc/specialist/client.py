@@ -1,36 +1,44 @@
-"""OpenAI-compatible Spark client for structured BrowserAction JSON."""
+"""OpenAI-compatible visual specialist (UI-Venus 2) — screenshot + instruction → BrowserAction."""
 
 from __future__ import annotations
 
+import base64
 import json
 import re
 from dataclasses import dataclass
+from pathlib import Path
 
 import httpx
 
 from saturn_fbc.contract import AuthorityContract, BrowserAction
-from saturn_fbc.pig_stack import MODEL_ID, openai_base_url
+from saturn_fbc.pig_stack import MODEL_ID, openai_base_url, health_json
 
 
-SYSTEM_PROMPT = """You are Spark, the inner browser loop for Saturn frontier browser control.
+SYSTEM_PROMPT = """You are the visual specialist for Saturn frontier browser control.
 
-You receive a bounded subgoal, authority contract constraints, and a numbered accessibility page digest.
+You receive a browser screenshot, a bounded subgoal, and contract constraints.
 Respond with exactly ONE JSON object — a BrowserAction — and nothing else.
 
-Allowed action types come from the contract allowed_actions only.
-Use index for a11y_indexed mode (preferred). Do not propose submit, send, purchase, or blocked actions.
-Never type into password or passphrase fields — the broker fills those automatically.
+For clicks on visible elements, prefer pixel coordinates:
+{"type":"click","x":640,"y":320}
 
-Example:
-{"type":"type","index":3,"text":"example@invalid.test"}
+You may also use indexed actions when an a11y digest is provided.
+Allowed action types come from the contract allowed_actions only.
+Do not propose submit, send, purchase, or blocked actions.
+Never type into password or passphrase fields.
 """
 
 
 @dataclass
-class SparkResponse:
+class VisualSpecialistResponse:
     action: BrowserAction | None
     raw: str
     parse_error: str | None = None
+
+
+def specialist_configured() -> bool:
+    health = health_json()
+    return "error" not in health
 
 
 def _extract_json(text: str) -> dict:
@@ -45,51 +53,55 @@ def _extract_json(text: str) -> dict:
     return json.loads(text[start : end + 1])
 
 
+def _encode_image(path: Path) -> str:
+    data = path.read_bytes()
+    b64 = base64.standard_b64encode(data).decode("ascii")
+    suffix = path.suffix.lower().lstrip(".") or "png"
+    mime = "jpeg" if suffix in ("jpg", "jpeg") else suffix
+    return f"data:image/{mime};base64,{b64}"
+
+
 def build_user_prompt(
     contract: AuthorityContract,
     *,
-    digest: str,
     url: str,
-    last_steps: list[str],
-    remaining_fields: dict[str, str] | None = None,
-) -> str:
-    history = "\n".join(last_steps[-5:]) if last_steps else "(none)"
-    remaining = ""
-    if remaining_fields:
-        remaining = "Still need values in: " + ", ".join(
-            f"{k}={v!r}" for k, v in remaining_fields.items()
-        )
-    return f"""Subgoal:
+    screenshot_path: str,
+    a11y_digest: str | None = None,
+    last_steps: list[str] | None = None,
+) -> list[dict]:
+    history = "\n".join((last_steps or [])[-5:]) if last_steps else "(none)"
+    digest_block = ""
+    if a11y_digest:
+        digest_block = f"\n\nAccessibility digest (optional hint):\n{a11y_digest}\n"
+    text = f"""Subgoal:
 {contract.subgoal}
 
 Allowed actions: {", ".join(contract.allowed_actions)}
 Blocked actions: {", ".join(contract.blocked_actions)}
-Max steps: {contract.max_steps}
 Task data: {json.dumps(contract.task_data)}
-{remaining}
 
 Current URL: {url}
-
-Page digest:
-{digest}
-
 Recent steps:
 {history}
+{digest_block}
+Use the screenshot to choose the next single browser action."""
+    return [
+        {"type": "text", "text": text},
+        {
+            "type": "image_url",
+            "image_url": {"url": _encode_image(Path(screenshot_path))},
+        },
+    ]
 
-Task data keys map to form field names. Fill unfilled task_data values only.
-Prefer typing into textbox nodes whose labels match task_data keys (custname, custtel, custemail, comments, name, email, phone).
-Do not click Submit. When all task_data fields appear filled, return a harmless scroll action.
-"""
 
-
-class SparkClient:
+class VisualSpecialistClient:
     def __init__(
         self,
         *,
         base_url: str | None = None,
         model: str | None = None,
         api_key: str = "llama-server",
-        timeout: float = 60.0,
+        timeout: float = 120.0,
     ) -> None:
         self.base_url = (base_url or openai_base_url()).rstrip("/")
         self.model = model or MODEL_ID
@@ -100,12 +112,12 @@ class SparkClient:
         self,
         contract: AuthorityContract,
         *,
-        digest: str,
         url: str,
-        last_steps: list[str],
-        remaining_fields: dict[str, str] | None = None,
+        screenshot_path: str,
+        a11y_digest: str | None = None,
+        last_steps: list[str] | None = None,
         temperature: float = 0.1,
-    ) -> SparkResponse:
+    ) -> VisualSpecialistResponse:
         payload = {
             "model": self.model,
             "messages": [
@@ -114,10 +126,10 @@ class SparkClient:
                     "role": "user",
                     "content": build_user_prompt(
                         contract,
-                        digest=digest,
                         url=url,
+                        screenshot_path=screenshot_path,
+                        a11y_digest=a11y_digest,
                         last_steps=last_steps,
-                        remaining_fields=remaining_fields,
                     ),
                 },
             ],
@@ -137,6 +149,8 @@ class SparkClient:
         content = data["choices"][0]["message"]["content"]
         try:
             parsed = _extract_json(content)
-            return SparkResponse(action=BrowserAction.model_validate(parsed), raw=content)
+            return VisualSpecialistResponse(
+                action=BrowserAction.model_validate(parsed), raw=content
+            )
         except Exception as exc:
-            return SparkResponse(action=None, raw=content, parse_error=str(exc))
+            return VisualSpecialistResponse(action=None, raw=content, parse_error=str(exc))

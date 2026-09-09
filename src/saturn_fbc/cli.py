@@ -8,7 +8,7 @@ from pathlib import Path
 import typer
 
 from saturn_fbc import __version__
-from saturn_fbc.broker import broker_status
+from saturn_fbc.broker import broker_status, create_credential
 from saturn_fbc.browser.daemon import (
     browser_daemon_status,
     ensure_daemon_for_headed_run,
@@ -92,10 +92,10 @@ def run_cmd(
     contract: Path = typer.Option(..., "--contract", help="Authority contract JSON"),
     headless: bool = typer.Option(False, "--headless", help="Headless Chromium (default: headed on HDMI)"),
     skip_gpu: bool = typer.Option(False, help="Do not switch pig-stack profile"),
-    skeleton: bool = typer.Option(False, help="Scripted skeleton instead of Spark loop"),
+    skeleton: bool = typer.Option(False, help="Scripted skeleton instead of visual specialist loop"),
 ) -> None:
     ensure_daemon_for_headed_run(headless)
-    mode = "skeleton" if skeleton else "spark"
+    mode = "skeleton" if skeleton else "visual"
     result = run_contract(
         contract,
         headless=headless,
@@ -109,6 +109,7 @@ def run_cmd(
             "steps": result.steps,
             "message": result.message,
             "escalation_path": str(result.escalation_path) if result.escalation_path else None,
+            "credential_handle": result.credential_handle,
             "mode": mode,
         }
     )
@@ -167,6 +168,24 @@ def broker_setup_cmd() -> None:
     from saturn_fbc.broker.vault import setup_status
 
     _json_out(setup_status())
+
+
+@app.command("broker-create")
+def broker_create_cmd(
+    domain: str = typer.Option(..., "--domain", help="Site domain (e.g. greenhouse.io)"),
+    username: str = typer.Option(..., "--username", help="Login email or username"),
+    label: str = typer.Option(..., "--label", help="Human-readable label for this account"),
+) -> None:
+    """Create a KeePass Sites entry with a broker-generated password. Returns handle only."""
+    handle = create_credential(domain, username, label)
+    _json_out(
+        {
+            "handle": handle.handle,
+            "domain": handle.domain,
+            "username": handle.username,
+            "status": handle.status,
+        }
+    )
 
 
 @app.command("specialist-status")

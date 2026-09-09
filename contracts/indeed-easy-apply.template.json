@@ -1,0 +1,26 @@
+{
+  "task_id": "indeed-easy-apply-REPLACE-JOBKEY",
+  "mode": "draft",
+  "subgoal": "Open this Indeed job posting. If Easy Apply is available, fill application fields from task_data (applicant profile + job-specific answers). Navigate multi-page forms as needed. Stop on the final Review or Submit step — do not submit. the operator submits on HDMI.",
+  "origin_allowlist": ["indeed.com"],
+  "start_url": "https://www.indeed.com/viewjob?jk=REPLACE_JOBKEY",
+  "allowed_actions": ["navigate", "scroll", "click", "type", "select"],
+  "blocked_actions": ["submit", "send", "purchase", "upload_sensitive", "change_security_settings"],
+  "max_steps": 30,
+  "credential_policy": "none",
+  "task_data": {
+    "name": "Example Applicant",
+    "email": "you@example.com",
+    "phone": "555-0100",
+    "city": "Austin",
+    "state": "TX",
+    "work_authorization": "Yes — authorized to work in the US without sponsorship",
+    "why_this_role": "REPLACE — one paragraph tailored to this posting"
+  },
+  "success_checks": [
+    "URL still on indeed.com",
+    "name field filled",
+    "email field filled",
+    "Submit was not activated"
+  ]
+}

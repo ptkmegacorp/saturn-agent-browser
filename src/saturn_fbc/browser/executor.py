@@ -51,6 +51,9 @@ def execute_action(page: Page, action: BrowserAction, *, snapshot: ObservationSn
         return f"scrolled {action.direction or 'down'} {amount}px"
 
     if action_type == "click":
+        if action.x is not None and action.y is not None:
+            page.mouse.click(action.x, action.y)
+            return f"clicked at ({action.x},{action.y})"
         locator = _resolve_locator(page, snap, action)
         locator.first.click(timeout=5000)
         return f"clicked index={action.index}"

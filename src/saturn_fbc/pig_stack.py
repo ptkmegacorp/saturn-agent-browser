@@ -13,7 +13,7 @@ from saturn_fbc import config
 PROFILE = config.get("PIG_STACK_PROFILE", "saturn-frontier-browser-control") or "saturn-frontier-browser-control"
 LLAMA_HOST = config.get("LLAMA_HOST", "127.0.0.1") or "127.0.0.1"
 LLAMA_PORT = config.get("LLAMA_PORT", "8091") or "8091"
-MODEL_ID = config.get("PIG_MODEL_ID", "spark-x2.5-4b-q4_k_m-local") or "spark-x2.5-4b-q4_k_m-local"
+MODEL_ID = config.get("PIG_MODEL_ID", "ui-venus-2-9b-q4km-local") or "ui-venus-2-9b-q4km-local"
 
 
 @dataclass

@@ -27,11 +27,22 @@ class StopReason(str, Enum):
     PRE_SUBMIT_BOUNDARY = "pre_submit_boundary"
 
 
+class CredentialSpec(BaseModel):
+    """Signup/login credential metadata for the broker (secrets stay in KeePass)."""
+
+    domain: str | None = None
+    username: str
+    label: str
+    handle: str | None = None
+
+
 class BrowserAction(BaseModel):
-    """Structured Playwright action proposed by Spark or a script."""
+    """Structured Playwright action proposed by the visual specialist or a script."""
 
     type: str
     index: int | None = None
+    x: int | None = None
+    y: int | None = None
     selector: str | None = None
     url: str | None = None
     text: str | None = None
@@ -55,6 +66,7 @@ class AuthorityContract(BaseModel):
     blocked_actions: list[str] = Field(default_factory=list)
     max_steps: int = Field(default=18, ge=1)
     credential_policy: str = "request_only"
+    credential_spec: CredentialSpec | None = None
     start_url: str | None = None
     task_data: dict[str, Any] = Field(default_factory=dict)
     success_checks: list[str] = Field(default_factory=list)

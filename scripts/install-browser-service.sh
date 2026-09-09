@@ -17,7 +17,8 @@ cp "$UNIT_SRC" "$UNIT_DST"
 "$ROOT/scripts/install-agent-profile.sh"
 
 systemctl --user daemon-reload
-systemctl --user enable saturn-fbc-browser.service
 echo "Installed user unit: $UNIT_DST"
-echo "Start with: systemctl --user start saturn-fbc-browser"
-echo "Status with: systemctl --user status saturn-fbc-browser"
+echo "Start manually: saturn-frontier-browser-control browser start"
+echo "Or: systemctl --user start saturn-fbc-browser"
+echo "Status: systemctl --user status saturn-fbc-browser"
+echo "(Not enabled at boot — start only when you need the browser worker.)"

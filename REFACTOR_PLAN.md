@@ -1,9 +1,13 @@
 # Refactor plan: persistent browser daemon (Option 1)
 
 **Status:** in progress (2026-09-04)  
-**Goal:** Headed Saturn Frontier Chromium stays on HDMI until explicitly stopped. Spark/skeleton **runs attach** over CDP instead of launch-and-close each time.
+**Goal:** Headed Saturn Frontier Chromium stays on HDMI until explicitly stopped. Visual specialist / skeleton **runs attach** over CDP instead of launch-and-close each time.
 
 ---
+
+## Relationship to the current build (2026-09-09)
+
+This file covers the isolated Playwright daemon refactor. The coordinated browser/Auth/UI build is specified in [docs/OPENCLAW_INTEGRATION_BUILD_PLAN.md](docs/OPENCLAW_INTEGRATION_BUILD_PLAN.md), used with Saturn Auth's build plan and Saturn Pi's `saturn-fbc-browser-web-ui` capsule plan. Preserve the existing daemon and CLI while adding the OpenClaw-derived trusted backend and UI service seams. Inspect current source/tests to establish completion of the phases below; their original status labels are historical planning context.
 
 ## Problem
 
@@ -30,7 +34,7 @@ Headed defaults (`DISPLAY=:0`, `SATURN_FBC_HOLD_SECONDS`) only delay the close. 
                             │ CDP http://127.0.0.1:<port>
         ┌───────────────────┼───────────────────┐
         ▼                   ▼                   ▼
-   run (Spark)      run-skeleton          browser status
+   run (Venus)      run-skeleton          browser status
    connect_over_cdp  connect_over_cdp      read state file
    work…             work…
    disconnect        disconnect            (no close)
@@ -103,7 +107,6 @@ Remove / repurpose `SATURN_FBC_HOLD_SECONDS` for daemon mode (no-op when attache
 | `tests/test_phase1_skeleton.py` | keep `headless=True` ephemeral |
 | `scripts/smoke-cli.sh` | `browser status` before headed demo |
 | `README.md`, `SKILL.md` | daemon workflow |
-| `BUILD_PLAN.md` | note persistent browser tenant |
 
 ---
 

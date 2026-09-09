@@ -1,0 +1,16 @@
+{
+  "task_id": "indeed-login-bootstrap",
+  "mode": "draft",
+  "subgoal": "DEPRECATED for Indeed login (CDP-on triggers Cloudflare). Navigate-only smoke test. For login use Firefox per docs/indeed.md OpenClaw/Codex strategy.",
+  "origin_allowlist": ["indeed.com"],
+  "start_url": "https://secure.indeed.com/auth",
+  "allowed_actions": ["navigate", "scroll"],
+  "blocked_actions": ["submit", "send", "purchase", "upload_sensitive", "change_security_settings", "click", "type", "select"],
+  "max_steps": 2,
+  "credential_policy": "none",
+  "task_data": {},
+  "success_checks": [
+    "URL still on indeed.com",
+    "Submit was not activated"
+  ]
+}

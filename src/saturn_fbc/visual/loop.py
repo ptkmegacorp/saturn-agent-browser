@@ -1,4 +1,4 @@
-"""Spark observe/act loop on fixtures and live contracts."""
+"""Visual specialist observe/act loop — screenshot + frontier subgoal → Playwright."""
 
 from __future__ import annotations
 
@@ -11,11 +11,9 @@ from saturn_fbc.browser.session import BrowserSession
 from saturn_fbc.config import resolve_headless
 from saturn_fbc.contract import AuthorityContract, StopReason, load_contract
 from saturn_fbc.credentials import CredentialFillResult, CredentialRunState, ensure_credential_filled
-from saturn_fbc.escalate import build_packet, dispatch_luna, write_escalation
+from saturn_fbc.escalate import build_packet, write_escalation
 from saturn_fbc.pig_stack import TenantState, acquire_tenant, release_tenant
-from saturn_fbc.spark.client import SparkClient
-from saturn_fbc.skeleton import next_type_action, remaining_task_fields
-from saturn_fbc.verify import check_success, verify_step
+from saturn_fbc.specialist.client import VisualSpecialistClient, specialist_configured
 
 
 @dataclass
@@ -28,26 +26,31 @@ class RunResult:
     credential_handle: str | None = None
 
 
-def run_spark_loop(
+def run_visual_loop(
     contract: AuthorityContract,
     *,
     headless: bool | None = None,
     skip_gpu: bool = False,
-    dry_run_spark: bool = False,
+    dry_run: bool = False,
     max_retries_per_step: int = 1,
 ) -> RunResult:
-    headless = resolve_headless(headless)
+    if not skip_gpu and not specialist_configured():
+        raise RuntimeError(
+            "Visual specialist not ready. pig-stack switch saturn-frontier-browser-control "
+            "and ensure llama-server serves ui-venus-2-9b-q4km-local on :8091."
+        )
 
+    headless = resolve_headless(headless)
     tenant: TenantState | None = None
     if not skip_gpu:
         tenant = acquire_tenant()
 
-    client = SparkClient()
+    client = VisualSpecialistClient()
     step_records = []
     recent_action_sigs: list[str] = []
-    credential_state = CredentialRunState(handle=(
-        contract.credential_spec.handle if contract.credential_spec else None
-    ))
+    credential_state = CredentialRunState(
+        handle=(contract.credential_spec.handle if contract.credential_spec else None)
+    )
     stop_reason = StopReason.MAX_STEPS
     message: str | None = None
     escalation_path: Path | None = None
@@ -69,6 +72,8 @@ def run_spark_loop(
                 snap = capture_a11y_indexed(page)
                 observe = session.observe()
                 step_records.append(observe)
+
+                from saturn_fbc.verify import check_success, verify_step
 
                 verification = verify_step(
                     contract,
@@ -111,9 +116,9 @@ def run_spark_loop(
                     session.stop(stop_reason, message=message)
                     break
 
-                if dry_run_spark:
+                if dry_run:
                     stop_reason = StopReason.PRE_SUBMIT_BOUNDARY
-                    message = "dry_run_spark: observation only"
+                    message = "dry_run: observation only"
                     session.stop(stop_reason, message=message)
                     break
 
@@ -144,42 +149,39 @@ def run_spark_loop(
                     step_records.append(observe)
                     continue
 
-                remaining = remaining_task_fields(page, contract, snap)
-
-                spark = client.propose_action(
+                assert observe.screenshot_path
+                visual = client.propose_action(
                     contract,
-                    digest=snap.digest,
                     url=page.url,
+                    screenshot_path=observe.screenshot_path,
+                    a11y_digest=snap.digest,
                     last_steps=recent_action_sigs,
-                    remaining_fields=remaining or None,
                 )
-                if spark.action is None:
+                if visual.action is None:
                     if max_retries_per_step <= 0:
                         packet = build_packet(
                             contract,
                             url=page.url,
-                            failed_checks=[f"Spark parse error: {spark.parse_error}"],
+                            failed_checks=[
+                                f"Visual specialist parse error: {visual.parse_error}"
+                            ],
                             steps=step_records,
                             a11y_snippet=snap.digest,
                             screenshot_path=observe.screenshot_path,
-                            message="Spark returned invalid JSON",
+                            message="Visual specialist returned invalid JSON",
                         )
                         escalation_path = write_escalation(session.trace.trace_dir, packet)
                         stop_reason = StopReason.ESCALATE
-                        message = spark.parse_error
+                        message = visual.parse_error
                         session.stop(stop_reason, message=message)
                         break
                     max_retries_per_step -= 1
                     continue
 
-                action = spark.action
-                if remaining and action.type in {"scroll", "wait"}:
-                    fallback = next_type_action(contract, snap, remaining)
-                    if fallback is not None:
-                        action = fallback
+                action = visual.action
                 record = session.act(action)
                 step_records.append(record)
-                sig = f"{action.type}:{action.index}:{action.text or action.url}"
+                sig = f"{action.type}:{action.x}:{action.y}:{action.index}:{action.text or action.url}"
                 recent_action_sigs.append(sig)
 
                 if record.error:
@@ -221,12 +223,12 @@ def run_contract_path(
     *,
     headless: bool | None = None,
     skip_gpu: bool = False,
-    dry_run_spark: bool = False,
+    dry_run: bool = False,
 ) -> RunResult:
     contract = load_contract(path)
-    return run_spark_loop(
+    return run_visual_loop(
         contract,
         headless=headless,
         skip_gpu=skip_gpu,
-        dry_run_spark=dry_run_spark,
+        dry_run=dry_run,
     )
