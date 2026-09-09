@@ -2,6 +2,18 @@
 
 Status (2026-09-09 review): initial Auth service, FBC Auth client and Pi approval capsule implemented. Live iPhone approval plumbing passed. Current priority: caller authorization, strict live bindings and atomic delivery lifecycle, followed by controlled browser fill and verified login.
 
+## Progress checkpoint (2026-09-09)
+
+Owner-confirmed working baseline: iPhone Saturn Pi Approve of existing KeePass credential `Sites/the-internet.herokuapp.com--tomsmith--option1-low-risk` for `https://the-internet.herokuapp.com`, then FBC fill, Login, independent `.flash.success` check, Auth `verified`, URL `/secure`. Request `auth_redacted`. Cursor session `redacted-cursor-session`. Login Approve window is about 30 seconds; Browser Auth lists pending cards on overlay open.
+
+Git checkpoint (local `main`):
+
+- saturn-frontier-browser-control `7010622` (also `3952690` the-internet login)
+- saturn-pi `d3b8adb` (also `36f5f30` Approve recipe Reload/wait)
+- saturn-auth `ff036e5` (unchanged for this HITL; working tree clean)
+
+FBC and saturn-pi were ahead of `origin/main` at this checkpoint and were not pushed as part of recording it.
+
 ## Required host conventions
 
 Read `~/saturn/SATURN_CONVENTIONS.md` before implementing any work package. Apply its simple Unix-style composition, clean stdout/stderr, explicit process/state ownership and core-preserving extension defaults. Saturn Pi presentation follows its shared module panel convention; feature behavior stays in the owning capsule. Cite this reference in agent handoffs and record necessary exceptions with tests.

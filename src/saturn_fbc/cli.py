@@ -16,6 +16,7 @@ from saturn_fbc.browser.daemon import (
     start_browser,
     stop_browser,
 )
+from saturn_fbc.browser.view import capture_snapshot, read_view
 from saturn_fbc.config import load_config
 from saturn_fbc.contract import load_contract
 from saturn_fbc.escalate import dispatch_luna
@@ -59,6 +60,35 @@ def browser_restart_cmd(
     wait_timeout: float = typer.Option(30.0, help="Seconds to wait for CDP health after restart"),
 ) -> None:
     _json_out(restart_browser(wait_timeout=wait_timeout))
+
+
+@browser_app.command("view")
+def browser_view_cmd() -> None:
+    """Read-only tabs/status for the Saturn Pi snapshot panel."""
+    _json_out(read_view())
+
+
+@browser_app.command("snapshot")
+def browser_snapshot_cmd(
+    tab_id: str = typer.Option(..., "--tab-id", help="Exact tab id from browser view"),
+    out: Path = typer.Option(..., "--out", help="PNG destination path"),
+) -> None:
+    result = capture_snapshot(tab_id)
+    if not result.get("ok"):
+        _json_out({k: v for k, v in result.items() if k != "png"})
+        raise typer.Exit(code=1)
+    out.parent.mkdir(parents=True, exist_ok=True)
+    out.write_bytes(result["png"])
+    _json_out(
+        {
+            "ok": True,
+            "path": str(out),
+            "tab_id": result["tab_id"],
+            "document_generation": result["document_generation"],
+            "url": result["url"],
+            "title": result["title"],
+        }
+    )
 
 
 @app.command("version")
