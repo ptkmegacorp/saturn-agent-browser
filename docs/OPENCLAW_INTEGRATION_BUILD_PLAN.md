@@ -28,11 +28,11 @@ Shipped:
 
 Still queued: OpenClaw-derived extension relay, Indeed/Cloudflare measured on this CDP shape, streaming/inspect, Face ID for new vault writes.
 
-Git checkpoint (filled after the evening `main` commits):
+Git checkpoint (`main`, this evening):
 
-- saturn-frontier-browser-control — see `main` after 2026-09-09 evening push
-- saturn-pi — see `main` after 2026-09-09 evening push (deployed; iPhone Saturn menu **Reload**)
-- saturn-auth `f734a3b` / `ff036e5` — unchanged this evening
+- saturn-frontier-browser-control `f2b7a95`
+- saturn-pi `4d65496` (deployed; iPhone Saturn menu **Reload**)
+- saturn-auth `f734a3b` — unchanged this evening
 
 ## Required host conventions
 
