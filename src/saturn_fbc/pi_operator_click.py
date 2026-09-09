@@ -3,12 +3,38 @@
 
 from __future__ import annotations
 
+import json
+import subprocess
 import sys
 from pathlib import Path
 
 _UI_ROOT = Path("~/projects/saturn-pi/tools/ui-operator")
+_SATURN_PI = Path("~/bin/saturn-pi")
 if str(_UI_ROOT) not in sys.path:
     sys.path.insert(0, str(_UI_ROOT))
+
+
+def click_browser_auth_approve_cli(request_id: str) -> str:
+    """Approve via a child saturn-pi ui process (safe inside an existing Playwright loop)."""
+    if not request_id or not str(request_id).strip():
+        raise ValueError("request_id_required")
+    rid = str(request_id).strip()
+    result = subprocess.run(
+        [str(_SATURN_PI), "ui", "recipe", "fbc-approve", "--request-id", rid],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    payload = {}
+    stdout = (result.stdout or "").strip()
+    if stdout:
+        try:
+            payload = json.loads(stdout.splitlines()[-1])
+        except json.JSONDecodeError:
+            payload = {"ok": False, "error": stdout}
+    if result.returncode != 0 or not payload.get("ok"):
+        raise RuntimeError(payload.get("error") or result.stderr.strip() or f"exit {result.returncode}")
+    return str(payload.get("request_id") or rid)
 
 
 def click_browser_auth_approve(

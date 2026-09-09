@@ -201,11 +201,12 @@ def fill_with_operator_gate(
     if not state.auth_request_id:
         return result
     from saturn_fbc.auth_client import wait_request_state
-    from saturn_fbc.pi_operator_click import click_browser_auth_approve
+    from saturn_fbc.pi_operator_click import click_browser_auth_approve_cli
 
     try:
-        click_browser_auth_approve(request_id=state.auth_request_id)
-    except Exception:
+        click_browser_auth_approve_cli(state.auth_request_id)
+    except Exception as err:
+        state.events.append(f"pi_click_failed:{err.__class__.__name__}")
         return CredentialFillResult.AUTH_UNAVAILABLE
     waited = wait_request_state(state.auth_request_id)
     if waited is None:

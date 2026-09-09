@@ -1,0 +1,19 @@
+{
+  "task_id": "the-internet-login-v1",
+  "run_id": "the-internet-login-v1",
+  "mode": "draft",
+  "subgoal": "Log in with the published the-internet demo credential after user approval. Do not change account settings.",
+  "origin_allowlist": ["the-internet.herokuapp.com"],
+  "start_url": "https://the-internet.herokuapp.com/login",
+  "allowed_actions": ["click", "type", "navigate"],
+  "blocked_actions": ["evaluate", "purchase", "upload_sensitive", "change_security_settings"],
+  "max_steps": 8,
+  "credential_policy": "existing_only",
+  "credential_spec": {
+    "domain": "the-internet.herokuapp.com",
+    "username": "tomsmith",
+    "label": "option1-low-risk",
+    "handle": "Sites/the-internet.herokuapp.com--tomsmith--option1-low-risk"
+  },
+  "success_checks": [".flash.success"]
+}
