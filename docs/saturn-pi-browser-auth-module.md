@@ -1,6 +1,6 @@
 # Saturn Pi browser/Auth integration — migration reference
 
-Canonical planned capsule: **`saturn-fbc-browser-web-ui`**, used with **Saturn Auth** and **Saturn FBC**. Current build instructions: [shared integration plan](OPENCLAW_INTEGRATION_BUILD_PLAN.md), [UI plan](../../saturn-pi/modules/saturn-fbc-browser-web-ui/BUILD_REFACTOR_PLAN.md), [Auth plan](../../saturn-auth/BUILD_REFACTOR_PLAN.md).
+Canonical planned capsule: **`saturn-agent-browser-web-ui`**, used with **Saturn Auth** and **Saturn FBC**. Current build instructions: [shared integration plan](OPENCLAW_INTEGRATION_BUILD_PLAN.md), [UI plan](../../saturn-pi/modules/saturn-agent-browser-web-ui/BUILD_REFACTOR_PLAN.md), [Auth plan](../../saturn-auth/BUILD_REFACTOR_PLAN.md).
 
 The `saturn-frontier-browser-auth` name and routes below describe the existing autofill spike. Runtime migration remains queued.
 
@@ -10,7 +10,7 @@ The `saturn-frontier-browser-auth` name and routes below describe the existing a
 |-------|----------|
 | Feature capsule | `~/projects/saturn-pi/modules/saturn-frontier-browser-auth/` |
 | Frontier browser | `~/projects/saturn-agent-browser` |
-| CLI | `~/bin/saturn-frontier-browser-control` |
+| CLI | `~/bin/saturn-agent-browser` |
 
 `saturn-frontier-browser-auth` currently tests same-origin autofill submission and returns field lengths. The new capsule will supply the full browser panel plus Saturn Auth cards/forms; Saturn Auth coordinates protected delivery to FBC's bound browser adapter.
 
@@ -21,25 +21,27 @@ Design reference: [`grok-in-chat-autofill.md`](grok-in-chat-autofill.md).
 ```text
 FBC Playwright run → credential_required
         ↓
-saturn-fbc-browser-web-ui Auth card / local form
+saturn-agent-browser-web-ui Auth card (approve existing vault entry)
         ↓
-User: iOS autofill + Face ID on same-origin fields
+User: explicit Approve on Pi; or type directly in the real browser window
         ↓
-Saturn Auth: bound request, approval, protected credential path (planned)
+Saturn Auth: bound request, approval, protected credential path
         ↓
 FBC adapter revalidates origin/session, fills, verifies → profile session persists
         ↓
 Agent continues; transcript shows status only
 ```
 
-The panel uses remote browser pixels; credential autofill uses actual same-origin HTML fields. Cross-domain saved-entry selection and Face ID behavior require real Safari/PWA tests. Follow Auth's pending vault-write verification decision before enabling KeePassXC storage writes.
+**Decision 2026-09-12: the "local form + iOS autofill" leg is abandoned.** iOS Passwords binds entries to the form's origin (Saturn Pi), never the remote page's origin, so Pi-local fields can neither offer nor save the target site's credentials. The diagram above is the supported shape: vault-approval or direct typing, no Pi-local credential fields.
+
+The panel uses remote browser pixels. **iOS-autofill-via-local-form abandoned 2026-09-12** (origin-bound matching makes cross-site offer/save impossible from Pi). Credential entry happens in the real browser window; Pi keeps approval + view/verify. Follow Auth's pending vault-write verification decision before enabling KeePassXC storage writes.
 
 ## Current status (2026-09-08)
 
 | Milestone | Status |
 |-----------|--------|
 | Module scaffold + docs | Done |
-| iOS autofill spike (overlay + `/test` page) | Done — **device verification pending** |
+| iOS autofill spike (overlay + `/test` page) | Retired 2026-09-12 — origin-bound matching blocks the path; kept as same-origin mechanics reference only |
 | Playwright relay from PWA submit | Not started |
 | KeePass broker integration | Planned extraction/adaptation behind Saturn Auth; FBC retains browser adapter |
 

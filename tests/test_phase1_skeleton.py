@@ -7,8 +7,8 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from saturn_fbc.contract import BrowserAction, load_contract
-from saturn_fbc.skeleton import build_fill_plan, fixture_url, run_skeleton
+from saturn_agent_browser.contract import BrowserAction, load_contract
+from saturn_agent_browser.skeleton import build_fill_plan, fixture_url, run_skeleton
 
 ROOT = Path(__file__).resolve().parents[1]
 LOCAL_CONTRACT = ROOT / "contracts" / "local-form.json"
@@ -57,9 +57,9 @@ def test_run_skeleton_mocked_session():
     )
 
     with (
-        patch("saturn_fbc.skeleton.BrowserSession", return_value=mock_session),
-        patch("saturn_fbc.skeleton.capture_a11y_indexed", return_value=fake_snap),
-        patch("saturn_fbc.skeleton.build_fill_plan", return_value=[BrowserAction(type="type", index=1, text="x")]),
+        patch("saturn_agent_browser.skeleton.BrowserSession", return_value=mock_session),
+        patch("saturn_agent_browser.skeleton.capture_a11y_indexed", return_value=fake_snap),
+        patch("saturn_agent_browser.skeleton.build_fill_plan", return_value=[BrowserAction(type="type", index=1, text="x")]),
     ):
         trace_dir = run_skeleton(contract_path=LOCAL_CONTRACT, headless=True)
 

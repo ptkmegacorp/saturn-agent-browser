@@ -1,6 +1,6 @@
 # Trusted-browser refactor and reconfiguration plan
 
-**Project:** Saturn Frontier Browser Control (FBC)  
+**Project:** Saturn Agent Browser Control (FBC)  
 **Status:** Phase 0 launch + Pi snapshot CDP **shipped 2026-09-09**. Extension relay and Indeed acceptance gates still pending.  
 **Primary target:** improve success on Indeed and similarly bot-sensitive sites through a normal persistent browser session, human authentication, and extension-based control  
 **Audience:** implementation agents, reviewers, and operators
@@ -9,7 +9,7 @@
 
 ## Current integration direction (2026-09-09)
 
-Read [OPENCLAW_INTEGRATION_BUILD_PLAN.md](docs/OPENCLAW_INTEGRATION_BUILD_PLAN.md) first. It owns current cross-project build order, pinned upstream source evidence, shared security bindings and acceptance gates. FBC works alongside **Saturn Auth** and the **`saturn-fbc-browser-web-ui`** Saturn Pi capsule.
+Read [OPENCLAW_INTEGRATION_BUILD_PLAN.md](docs/OPENCLAW_INTEGRATION_BUILD_PLAN.md) first. It owns current cross-project build order, pinned upstream source evidence, shared security bindings and acceptance gates. FBC works alongside **Saturn Auth** and the **`saturn-agent-browser-web-ui`** Saturn Pi capsule.
 
 The two-lane design below remains the target. Its bespoke extension/protocol tree, native-messaging action transport, HDMI-only login ownership and phase order are earlier proposals superseded where the shared plan specifies OpenClaw reuse and remote UI integration. Preserve reusable upstream extension/relay code and its tests, with a dedicated Saturn extension identity and selected-tab access. Evaluate an FBC-owned JS/TS sidecar before rewriting upstream machinery in Python. Native messaging handles bootstrap; authenticated relay transport carries browser operations.
 
@@ -22,7 +22,7 @@ HDMI remains the initial sensitive-login/challenge surface. As of 2026-09-09 the
 | Isolated | Playwright Chromium | `…/chromium/` | `:9222` | **Isolated** |
 | Trusted | Google Chrome stable 153 (`/usr/bin/google-chrome-stable`) | `…/trusted-chrome/` | `:9223` | **Chrome** (panel default) |
 
-CLI: `browser trusted start|status|stop`, `browser view --lane trusted`. Code: `src/saturn_fbc/browser/trusted.py`, `config/trusted-browser.env`. Pi: `modules/saturn-fbc-browser-web-ui`.
+CLI: `browser trusted start|status|stop`, `browser view --lane trusted`. Code: `src/saturn_agent_browser/browser/trusted.py`, `config/trusted-browser.env`. Pi: `modules/saturn-agent-browser-web-ui`.
 
 ## 1. Goal
 
@@ -49,7 +49,7 @@ The trusted lane should preserve the browser session that Cloudflare accepted. S
 
 - Dependency: Playwright 1.62.
 - Browser: Playwright **Chrome for Testing 151.0.7922.34**.
-- Profile: `~/.local/share/saturn-frontier-browser-control/chromium/`.
+- Profile: `~/.local/share/saturn-agent-browser/chromium/`.
 - Launch: `playwright.chromium.launch_persistent_context(...)`.
 - Persistent daemon: CDP exposed on `127.0.0.1:9222` from browser startup.
 - Run control: `connect_over_cdp(...)`.
@@ -59,13 +59,13 @@ The trusted lane should preserve the browser session that Cloudflare accepted. S
 
 Relevant implementation:
 
-- `src/saturn_fbc/browser/profile.py`
-- `src/saturn_fbc/browser/daemon.py`
-- `src/saturn_fbc/browser/session.py`
-- `src/saturn_fbc/browser/executor.py`
-- `src/saturn_fbc/browser/capture.py`
-- `src/saturn_fbc/browser/interceptor.py`
-- `src/saturn_fbc/cli.py`
+- `src/saturn_agent_browser/browser/profile.py`
+- `src/saturn_agent_browser/browser/daemon.py`
+- `src/saturn_agent_browser/browser/session.py`
+- `src/saturn_agent_browser/browser/executor.py`
+- `src/saturn_agent_browser/browser/capture.py`
+- `src/saturn_agent_browser/browser/interceptor.py`
+- `src/saturn_agent_browser/cli.py`
 
 ### OpenAI reference architecture
 
@@ -143,7 +143,7 @@ The current `BrowserSession` directly depends on Playwright `Page` and `BrowserC
 Proposed files:
 
 ```text
-src/saturn_fbc/browser/backends/
+src/saturn_agent_browser/browser/backends/
 ├── __init__.py
 ├── base.py
 ├── playwright_backend.py
@@ -192,7 +192,7 @@ extension/
 ├── options.html
 └── README.md
 
-src/saturn_fbc/extension/
+src/saturn_agent_browser/extension/
 ├── __init__.py
 ├── protocol.py
 ├── relay.py
@@ -243,11 +243,11 @@ The relay should reject arbitrary JavaScript and arbitrary shell commands. DOM i
 Add:
 
 ```bash
-SATURN_FBC_BROWSER_BACKEND=isolated-playwright
-SATURN_FBC_TRUSTED_EXECUTABLE=/usr/bin/google-chrome-stable
-SATURN_FBC_TRUSTED_PROFILE=~/.local/share/saturn-frontier-browser-control/trusted-chrome
-SATURN_FBC_TRUSTED_RELAY=native-messaging
-SATURN_FBC_TRUSTED_STATE=~/.local/share/saturn-frontier-browser-control/trusted-browser-state.json
+SATURN_AGENT_BROWSER_BROWSER_BACKEND=isolated-playwright
+SATURN_AGENT_BROWSER_TRUSTED_EXECUTABLE=/usr/bin/google-chrome-stable
+SATURN_AGENT_BROWSER_TRUSTED_PROFILE=~/.local/share/saturn-agent-browser/trusted-chrome
+SATURN_AGENT_BROWSER_TRUSTED_RELAY=native-messaging
+SATURN_AGENT_BROWSER_TRUSTED_STATE=~/.local/share/saturn-agent-browser/trusted-browser-state.json
 ```
 
 Add an optional contract field:
@@ -269,28 +269,28 @@ Existing contracts default to `isolated-playwright` for backward compatibility. 
 
 ```bash
 # Inspect both lanes
-saturn-frontier-browser-control browser profiles
-saturn-frontier-browser-control browser trusted status
+saturn-agent-browser browser profiles
+saturn-agent-browser browser trusted status
 
 # Launch ordinary stable browser with dedicated profile
-saturn-frontier-browser-control browser trusted start
+saturn-agent-browser browser trusted start
 
 # Human logs in and completes any challenge on HDMI
 
 # Connect extension relay after the accepted session is warm
-saturn-frontier-browser-control browser trusted session-ready
+saturn-agent-browser browser trusted session-ready
 
 # Pause agent control for a human gate
-saturn-frontier-browser-control browser trusted pause
+saturn-agent-browser browser trusted pause
 
 # Resume after human review
-saturn-frontier-browser-control browser trusted resume
+saturn-agent-browser browser trusted resume
 
 # Close trusted browser and relay
-saturn-frontier-browser-control browser trusted stop
+saturn-agent-browser browser trusted stop
 
 # Run a bounded contract in the trusted tab
-saturn-frontier-browser-control run \
+saturn-agent-browser run \
   --backend trusted-extension \
   --contract contracts/indeed-easy-apply-JOBKEY.json
 ```
@@ -468,7 +468,7 @@ Later scope includes:
 
 1. Stop the trusted relay.
 2. Disable the FBC trusted-browser extension.
-3. Set `SATURN_FBC_BROWSER_BACKEND=isolated-playwright`.
+3. Set `SATURN_AGENT_BROWSER_BROWSER_BACKEND=isolated-playwright`.
 4. Keep the trusted profile directory for operator-controlled recovery.
 5. Run the local and live smoke tests against the isolated backend.
 6. Record the failed phase and evidence in this plan.
@@ -497,7 +497,7 @@ An implementation agent should:
 ### Handoff prompt
 
 ```text
-Continue the Saturn Frontier Browser Control trusted-browser conversion.
+Continue the Saturn Agent Browser Control trusted-browser conversion.
 Read TRUSTED_BROWSER_REFACTOR_PLAN.md and the linked project docs, inspect the
 current working tree, and implement only the first incomplete phase. Preserve
 all existing user changes and the isolated Playwright backend. Add focused

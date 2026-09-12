@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import unittest
 
-from saturn_fbc.browser.live_bindings import attach_live_bindings, bump_document, read_live_bindings
+from saturn_agent_browser.browser.live_bindings import attach_live_bindings, bump_document, read_live_bindings
 
 
 class FakeFrame:

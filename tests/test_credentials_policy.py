@@ -4,8 +4,8 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from saturn_fbc.contract import AuthorityContract, ContractMode, CredentialSpec, load_contract
-from saturn_fbc.credentials import (
+from saturn_agent_browser.contract import AuthorityContract, ContractMode, CredentialSpec, load_contract
+from saturn_agent_browser.credentials import (
     policy_active,
     resolve_domain,
     resolve_label,

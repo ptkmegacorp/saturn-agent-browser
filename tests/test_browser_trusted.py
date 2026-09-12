@@ -6,7 +6,7 @@ from pathlib import Path
 
 import pytest
 
-from saturn_fbc.browser.trusted import (
+from saturn_agent_browser.browser.trusted import (
     FORBIDDEN_FLAGS,
     list_browser_profiles,
     sandbox_args,
@@ -17,11 +17,11 @@ from saturn_fbc.browser.trusted import (
 
 
 def test_launch_argv_has_no_cdp_and_separate_profile(tmp_path: Path, monkeypatch):
-    monkeypatch.setenv("SATURN_FBC_SHARE", str(tmp_path / "share"))
-    monkeypatch.setenv("SATURN_FBC_CHROMIUM_USER_DATA", str(tmp_path / "share" / "chromium"))
-    monkeypatch.setenv("SATURN_FBC_TRUSTED_PROFILE", str(tmp_path / "share" / "trusted-chrome"))
-    monkeypatch.setenv("SATURN_FBC_TRUSTED_NAME", "SaturnTrustedChromeTest")
-    from saturn_fbc import config
+    monkeypatch.setenv("SATURN_AGENT_BROWSER_SHARE", str(tmp_path / "share"))
+    monkeypatch.setenv("SATURN_AGENT_BROWSER_CHROMIUM_USER_DATA", str(tmp_path / "share" / "chromium"))
+    monkeypatch.setenv("SATURN_AGENT_BROWSER_TRUSTED_PROFILE", str(tmp_path / "share" / "trusted-chrome"))
+    monkeypatch.setenv("SATURN_AGENT_BROWSER_TRUSTED_NAME", "SaturnTrustedChromeTest")
+    from saturn_agent_browser import config
 
     config.load_config.cache_clear()
     exe = tmp_path / "google-chrome-stable"
@@ -42,10 +42,10 @@ def test_launch_argv_has_no_cdp_and_separate_profile(tmp_path: Path, monkeypatch
 
 
 def test_profiles_lists_two_lanes(tmp_path: Path, monkeypatch):
-    monkeypatch.setenv("SATURN_FBC_SHARE", str(tmp_path / "share"))
-    monkeypatch.setenv("SATURN_FBC_CHROMIUM_USER_DATA", str(tmp_path / "share" / "chromium"))
-    monkeypatch.setenv("SATURN_FBC_TRUSTED_PROFILE", str(tmp_path / "share" / "trusted-chrome"))
-    from saturn_fbc import config
+    monkeypatch.setenv("SATURN_AGENT_BROWSER_SHARE", str(tmp_path / "share"))
+    monkeypatch.setenv("SATURN_AGENT_BROWSER_CHROMIUM_USER_DATA", str(tmp_path / "share" / "chromium"))
+    monkeypatch.setenv("SATURN_AGENT_BROWSER_TRUSTED_PROFILE", str(tmp_path / "share" / "trusted-chrome"))
+    from saturn_agent_browser import config
 
     config.load_config.cache_clear()
     listing = list_browser_profiles()
@@ -72,11 +72,11 @@ def test_sandbox_args_detects_apt_helper():
 
 
 def test_start_without_executable(tmp_path: Path, monkeypatch):
-    monkeypatch.setenv("SATURN_FBC_SHARE", str(tmp_path / "share"))
-    monkeypatch.setenv("SATURN_FBC_CHROMIUM_USER_DATA", str(tmp_path / "share" / "chromium"))
-    monkeypatch.setenv("SATURN_FBC_TRUSTED_PROFILE", str(tmp_path / "share" / "trusted-chrome"))
-    monkeypatch.setenv("SATURN_FBC_TRUSTED_EXECUTABLE", str(tmp_path / "missing-chrome"))
-    from saturn_fbc import config
+    monkeypatch.setenv("SATURN_AGENT_BROWSER_SHARE", str(tmp_path / "share"))
+    monkeypatch.setenv("SATURN_AGENT_BROWSER_CHROMIUM_USER_DATA", str(tmp_path / "share" / "chromium"))
+    monkeypatch.setenv("SATURN_AGENT_BROWSER_TRUSTED_PROFILE", str(tmp_path / "share" / "trusted-chrome"))
+    monkeypatch.setenv("SATURN_AGENT_BROWSER_TRUSTED_EXECUTABLE", str(tmp_path / "missing-chrome"))
+    from saturn_agent_browser import config
 
     config.load_config.cache_clear()
     result = start_trusted()

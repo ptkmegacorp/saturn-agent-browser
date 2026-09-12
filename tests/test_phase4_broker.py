@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import pytest
 
-from saturn_fbc.broker import broker_status, create_credential, generate_password, vault_ready
+from saturn_agent_browser.broker import broker_status, create_credential, generate_password, vault_ready
 
 
 def test_generate_password_length():

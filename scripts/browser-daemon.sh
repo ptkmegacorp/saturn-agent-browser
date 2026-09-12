@@ -10,6 +10,6 @@ source "$ROOT/config/browser.env"
 
 export DISPLAY="${DISPLAY:-:0}"
 export XAUTHORITY="${XAUTHORITY:-$HOME/.Xauthority}"
-export SATURN_FBC_HEADLESS="${SATURN_FBC_HEADLESS:-0}"
+export SATURN_AGENT_BROWSER_HEADLESS="${SATURN_AGENT_BROWSER_HEADLESS:-0}"
 
-exec "$ROOT/.venv/bin/python" -m saturn_fbc.browser.daemon
+exec "$ROOT/.venv/bin/python" -m saturn_agent_browser.browser.daemon

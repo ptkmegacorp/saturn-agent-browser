@@ -7,9 +7,9 @@ from pathlib import Path
 
 import pytest
 
-from saturn_fbc.actions import ActionRejectedError, validate_action
-from saturn_fbc.browser.interceptor import intercept_action, validate_navigate
-from saturn_fbc.contract import (
+from saturn_agent_browser.actions import ActionRejectedError, validate_action
+from saturn_agent_browser.browser.interceptor import intercept_action, validate_navigate
+from saturn_agent_browser.contract import (
     AuthorityContract,
     BrowserAction,
     ContractMode,

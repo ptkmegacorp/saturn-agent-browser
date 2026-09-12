@@ -1,0 +1,20 @@
+[Unit]
+Description=Saturn Agent Browser (trusted Chrome lane on HDMI)
+After=graphical-session.target network-online.target
+Wants=network-online.target
+# Single lane slot: starting one browser lane stops the other.
+Conflicts=saturn-agent-browser.service
+
+[Service]
+Type=simple
+WorkingDirectory=~/projects/saturn-agent-browser
+ExecStart=~/projects/saturn-agent-browser/scripts/trusted-chrome-service.sh
+ExecStop=~/projects/saturn-agent-browser/.venv/bin/python -m saturn_agent_browser.cli browser trusted stop
+Restart=on-failure
+RestartSec=5
+TimeoutStopSec=20
+KillMode=mixed
+UMask=0077
+
+[Install]
+WantedBy=default.target

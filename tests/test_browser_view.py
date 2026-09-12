@@ -7,19 +7,19 @@ from unittest.mock import patch
 
 import pytest
 
-from saturn_fbc.browser.view import capture_snapshot, list_cdp_pages, read_view
+from saturn_agent_browser.browser.view import capture_snapshot, list_cdp_pages, read_view
 
 
 @pytest.fixture
 def isolated_state(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
     share = tmp_path / "share"
     share.mkdir()
-    browsers = Path.home() / ".local/share/saturn-frontier-browser-control/playwright-browsers"
-    monkeypatch.setenv("SATURN_FBC_SHARE", str(share))
-    monkeypatch.setenv("SATURN_FBC_CHROMIUM_USER_DATA", str(share / "chromium"))
+    browsers = Path.home() / ".local/share/saturn-agent-browser/playwright-browsers"
+    monkeypatch.setenv("SATURN_AGENT_BROWSER_SHARE", str(share))
+    monkeypatch.setenv("SATURN_AGENT_BROWSER_CHROMIUM_USER_DATA", str(share / "chromium"))
     monkeypatch.setenv("PLAYWRIGHT_BROWSERS_PATH", str(browsers))
-    monkeypatch.setenv("SATURN_FBC_BROWSER_MODE", "daemon")
-    from saturn_fbc import config
+    monkeypatch.setenv("SATURN_AGENT_BROWSER_BROWSER_MODE", "daemon")
+    from saturn_agent_browser import config
 
     config.load_config.cache_clear()
     yield share
@@ -47,7 +47,7 @@ def test_list_cdp_pages_filters_non_pages(isolated_state: Path):
                 {"id": "", "type": "page", "url": "https://skip.example/", "title": "no-id"},
             ]
 
-    with patch("saturn_fbc.browser.view.httpx.get", return_value=FakeResponse()):
+    with patch("saturn_agent_browser.browser.view.httpx.get", return_value=FakeResponse()):
         pages = list_cdp_pages("http://127.0.0.1:9")
     assert [p["tab_id"] for p in pages] == ["tab-aaa"]
     assert pages[0]["url"] == "https://example.com/"
@@ -62,12 +62,12 @@ def test_capture_snapshot_unknown_tab_when_disconnected(isolated_state: Path):
 
 def test_capture_snapshot_matches_exact_tab(isolated_state: Path, monkeypatch: pytest.MonkeyPatch):
     monkeypatch.setattr(
-        "saturn_fbc.browser.view.browser_daemon_status",
+        "saturn_agent_browser.browser.view.browser_daemon_status",
         lambda: {"running": True, "cdp_url": "http://127.0.0.1:9", "pid": 1},
     )
     monkeypatch.setattr(
-        "saturn_fbc.browser.view.list_cdp_pages",
-        lambda _url: [
+        "saturn_agent_browser.browser.view.list_cdp_pages",
+        lambda _url, _lane=None: [
             {
                 "tab_id": "tab-abc",
                 "target_id": "abc",
@@ -86,11 +86,11 @@ def test_capture_snapshot_matches_exact_tab(isolated_state: Path, monkeypatch: p
         pages = [FakePage()]
 
     monkeypatch.setattr(
-        "saturn_fbc.browser.view.connect_over_cdp",
+        "saturn_agent_browser.browser.view.connect_over_cdp",
         lambda _url: (None, FakeContext(), True),
     )
-    monkeypatch.setattr("saturn_fbc.browser.view._page_target_id", lambda _page: "abc")
-    monkeypatch.setattr("saturn_fbc.browser.view.release_browser_context", lambda *_a, **_k: None)
+    monkeypatch.setattr("saturn_agent_browser.browser.view._page_target_id", lambda _page: "abc")
+    monkeypatch.setattr("saturn_agent_browser.browser.view.release_browser_context", lambda *_a, **_k: None)
 
     shot = capture_snapshot("tab-abc")
     assert shot.get("ok") is True, shot
@@ -103,7 +103,7 @@ def test_capture_snapshot_matches_exact_tab(isolated_state: Path, monkeypatch: p
 
 def test_capture_snapshot_rejects_stale_generation(isolated_state: Path, monkeypatch: pytest.MonkeyPatch):
     monkeypatch.setattr(
-        "saturn_fbc.browser.view.browser_daemon_status",
+        "saturn_agent_browser.browser.view.browser_daemon_status",
         lambda: {"running": True, "cdp_url": "http://127.0.0.1:9", "pid": 1},
     )
     pages = [
@@ -115,7 +115,7 @@ def test_capture_snapshot_rejects_stale_generation(isolated_state: Path, monkeyp
             "document_generation": "doc-1",
         }
     ]
-    monkeypatch.setattr("saturn_fbc.browser.view.list_cdp_pages", lambda _url: pages)
+    monkeypatch.setattr("saturn_agent_browser.browser.view.list_cdp_pages", lambda _url, _lane=None: pages)
 
     class FakePage:
         def screenshot(self, **_kwargs):
@@ -125,11 +125,11 @@ def test_capture_snapshot_rejects_stale_generation(isolated_state: Path, monkeyp
         pages = [FakePage()]
 
     monkeypatch.setattr(
-        "saturn_fbc.browser.view.connect_over_cdp",
+        "saturn_agent_browser.browser.view.connect_over_cdp",
         lambda _url: (None, FakeContext(), True),
     )
-    monkeypatch.setattr("saturn_fbc.browser.view._page_target_id", lambda _page: "abc")
-    monkeypatch.setattr("saturn_fbc.browser.view.release_browser_context", lambda *_a, **_k: None)
+    monkeypatch.setattr("saturn_agent_browser.browser.view._page_target_id", lambda _page: "abc")
+    monkeypatch.setattr("saturn_agent_browser.browser.view.release_browser_context", lambda *_a, **_k: None)
 
     assert capture_snapshot("tab-abc", expected_generation="doc-other")["error"] == "stale_document"
     ok = capture_snapshot("tab-abc", expected_generation="doc-1")
@@ -140,12 +140,12 @@ def test_capture_snapshot_rejects_generation_changed_during_capture(
     isolated_state: Path, monkeypatch: pytest.MonkeyPatch
 ):
     monkeypatch.setattr(
-        "saturn_fbc.browser.view.browser_daemon_status",
+        "saturn_agent_browser.browser.view.browser_daemon_status",
         lambda: {"running": True, "cdp_url": "http://127.0.0.1:9", "pid": 1},
     )
     calls = {"n": 0}
 
-    def fake_list(_url):
+    def fake_list(_url, _lane=None):
         calls["n"] += 1
         gen = "doc-1" if calls["n"] == 1 else "doc-2"
         return [
@@ -158,7 +158,7 @@ def test_capture_snapshot_rejects_generation_changed_during_capture(
             }
         ]
 
-    monkeypatch.setattr("saturn_fbc.browser.view.list_cdp_pages", fake_list)
+    monkeypatch.setattr("saturn_agent_browser.browser.view.list_cdp_pages", fake_list)
 
     class FakePage:
         def screenshot(self, **_kwargs):
@@ -168,11 +168,11 @@ def test_capture_snapshot_rejects_generation_changed_during_capture(
         pages = [FakePage()]
 
     monkeypatch.setattr(
-        "saturn_fbc.browser.view.connect_over_cdp",
+        "saturn_agent_browser.browser.view.connect_over_cdp",
         lambda _url: (None, FakeContext(), True),
     )
-    monkeypatch.setattr("saturn_fbc.browser.view._page_target_id", lambda _page: "abc")
-    monkeypatch.setattr("saturn_fbc.browser.view.release_browser_context", lambda *_a, **_k: None)
+    monkeypatch.setattr("saturn_agent_browser.browser.view._page_target_id", lambda _page: "abc")
+    monkeypatch.setattr("saturn_agent_browser.browser.view.release_browser_context", lambda *_a, **_k: None)
 
     result = capture_snapshot("tab-abc", expected_generation="doc-1")
     assert result["ok"] is False
@@ -180,8 +180,8 @@ def test_capture_snapshot_rejects_generation_changed_during_capture(
 
 
 def test_navigate_requires_human_and_allowlist(isolated_state: Path, monkeypatch: pytest.MonkeyPatch):
-    from saturn_fbc.browser.control import write_control_mode
-    from saturn_fbc.browser.view import navigate_tab, validate_panel_url
+    from saturn_agent_browser.browser.control import write_control_mode
+    from saturn_agent_browser.browser.view import navigate_tab, validate_panel_url
 
     assert validate_panel_url("javascript:alert(1)")[1] == "invalid_url"
     assert validate_panel_url("https://user:pass@example.com/")[1] == "invalid_url"
@@ -194,37 +194,46 @@ def test_navigate_requires_human_and_allowlist(isolated_state: Path, monkeypatch
 
     write_control_mode("human")
     monkeypatch.setattr(
-        "saturn_fbc.browser.view.browser_daemon_status",
+        "saturn_agent_browser.browser.view.browser_daemon_status",
         lambda: {"running": True, "cdp_url": "http://127.0.0.1:9", "pid": 1},
     )
-    monkeypatch.setattr(
-        "saturn_fbc.browser.view.list_cdp_pages",
-        lambda _url: [
+    shown_url = {"url": "about:blank"}
+
+    def fake_navigate_list(_url, _lane=None):
+        from saturn_agent_browser.browser import generations as _gens
+
+        return [
             {
                 "tab_id": "tab-abc",
                 "target_id": "abc",
-                "url": "about:blank",
-                "title": "about:blank",
-                "document_generation": "doc-1",
+                "url": shown_url["url"],
+                "title": shown_url["url"],
+                "document_generation": _gens.observe(
+                    lane="isolated", target_id="abc", url=shown_url["url"]
+                ),
             }
-        ],
-    )
+        ]
+
+    monkeypatch.setattr("saturn_agent_browser.browser.view.list_cdp_pages", fake_navigate_list)
 
     class FakePage:
         def goto(self, url, **_kwargs):
-            self.url = url
+            shown_url["url"] = url
 
     class FakeContext:
         pages = [FakePage()]
 
     monkeypatch.setattr(
-        "saturn_fbc.browser.view.connect_over_cdp",
+        "saturn_agent_browser.browser.view.connect_over_cdp",
         lambda _url: (None, FakeContext(), True),
     )
-    monkeypatch.setattr("saturn_fbc.browser.view._page_target_id", lambda _page: "abc")
-    monkeypatch.setattr("saturn_fbc.browser.view.release_browser_context", lambda *_a, **_k: None)
+    monkeypatch.setattr("saturn_agent_browser.browser.view._page_target_id", lambda _page: "abc")
+    monkeypatch.setattr("saturn_agent_browser.browser.view.release_browser_context", lambda *_a, **_k: None)
 
     stale = navigate_tab("tab-abc", "https://example.com/", "doc-stale")
     assert stale["error"] == "stale_document"
-    moved = navigate_tab("tab-abc", "https://example.com/", "doc-1")
+    from saturn_agent_browser.browser import generations as _navigate_gens
+
+    live_gen = _navigate_gens.observe(lane="isolated", target_id="abc", url=shown_url["url"])
+    moved = navigate_tab("tab-abc", "https://example.com/", live_gen)
     assert moved.get("ok") is True, moved

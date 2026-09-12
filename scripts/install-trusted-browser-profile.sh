@@ -6,12 +6,12 @@ ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 source "$ROOT/config/chromium.env"
 # shellcheck source=/dev/null
 source "$ROOT/config/trusted-browser.env"
-mkdir -p "$SATURN_FBC_TRUSTED_PROFILE"
-chmod 700 "$SATURN_FBC_TRUSTED_PROFILE"
-iso="$(readlink -f "$SATURN_FBC_CHROMIUM_USER_DATA")"
-trust="$(readlink -f "$SATURN_FBC_TRUSTED_PROFILE")"
+mkdir -p "$SATURN_AGENT_BROWSER_TRUSTED_PROFILE"
+chmod 700 "$SATURN_AGENT_BROWSER_TRUSTED_PROFILE"
+iso="$(readlink -f "$SATURN_AGENT_BROWSER_CHROMIUM_USER_DATA")"
+trust="$(readlink -f "$SATURN_AGENT_BROWSER_TRUSTED_PROFILE")"
 if [[ "$trust" == "$iso" ]]; then
   echo "trusted profile must not be the isolated Chromium dir" >&2
   exit 1
 fi
-echo "$SATURN_FBC_TRUSTED_PROFILE"
+echo "$SATURN_AGENT_BROWSER_TRUSTED_PROFILE"

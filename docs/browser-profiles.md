@@ -1,6 +1,7 @@
 # Browser profiles (design sketch)
 
-**Status:** two lanes exist (2026-09-09). Isolated Playwright Chromium (`:9222`) plus dedicated Google Chrome (`:9223` for Pi snapshots). Extension relay / Indeed acceptance still not implemented.  
+**Status:** two lanes exist (2026-09-09). Isolated Playwright Chromium (`:9222`) plus dedicated Google Chrome (`:9223` for Pi snapshots). Extension relay / Indeed acceptance still not implemented.
+**Lane policy (2026-09-11): single slot.** Both lanes have user units with mutual `Conflicts=`: `saturn-agent-browser.service` (isolated) and `saturn-agent-browser-trusted.service` (new). Starting one stops the other, so exactly one headed browser holds the task session at a time — no cross-lane cookie/lease ambiguity. Switch with `systemctl --user start <unit>`. Trusted is enabled at boot (owner's daily driver); isolated stays manual for fixture/live runs. Backend code keeps per-lane keys, so the policy can relax later without rework.
 **Goal:** Mirror [OpenClaw’s multi-profile model](openclaw-comparison.md) on Saturn — isolated agent browser for bounded runs, separate lane for human login on bot-sensitive sites (Indeed, Google SSO, Cloudflare).  
 **Implementation handoff:** [`../TRUSTED_BROWSER_REFACTOR_PLAN.md`](../TRUSTED_BROWSER_REFACTOR_PLAN.md)
 
@@ -56,7 +57,7 @@ Our daemon always starts Chromium with `--remote-debugging-port=9222`. Playwrigh
          │                         │                         │
          ▼                         ▼                         ▼
   Playwright Chromium         Playwright Chromium         Firefox on :0
-  SATURN_FBC CDP :9222        bootstrap window            Personal.kdbx / PM
+  SATURN_AGENT_BROWSER CDP :9222        bootstrap window            Personal.kdbx / PM
          │                         │                         │
          └──────── cookie bridge (optional, phase 3) ──────┘
                                    │
@@ -80,9 +81,9 @@ Our daemon always starts Chromium with `--remote-debugging-port=9222`. Playwrigh
 **Env (existing):**
 
 ```bash
-SATURN_FBC_BROWSER_PROFILE=isolated   # default when unset
-SATURN_FBC_BROWSER_MODE=daemon
-SATURN_FBC_CDP_PORT=9222
+SATURN_AGENT_BROWSER_BROWSER_PROFILE=isolated   # default when unset
+SATURN_AGENT_BROWSER_BROWSER_MODE=daemon
+SATURN_AGENT_BROWSER_CDP_PORT=9222
 ```
 
 **Do not use for:** First-time Indeed login with Google SSO or active Cloudflare challenge.
@@ -97,21 +98,21 @@ SATURN_FBC_CDP_PORT=9222
 
 ```bash
 # 1. Start bootstrap window (no CDP, no visual specialist attach)
-saturn-frontier-browser-control browser bootstrap start
+saturn-agent-browser browser bootstrap start
 # Opens headed Chromium on HDMI; state: bootstrap_active, cdp_enabled=false
 
 # 2. Human on HDMI: navigate to Indeed, log in, pass 2FA/Turnstile
 #    Do NOT run `run` during this step.
 
 # 3. Mark session ready → daemon restarts or hot-enables CDP
-saturn-frontier-browser-control browser session-ready
+saturn-agent-browser browser session-ready
 # state: cdp_enabled=true, cdp_url=http://127.0.0.1:9222
 
 # 4. Agent runs as today
-saturn-frontier-browser-control run --contract contracts/indeed-easy-apply-JOBKEY.json
+saturn-agent-browser run --contract contracts/indeed-easy-apply-JOBKEY.json
 
 # 5. Stop when done
-saturn-frontier-browser-control browser stop
+saturn-agent-browser browser stop
 ```
 
 **CLI additions (sketch):**
@@ -130,7 +131,7 @@ saturn-frontier-browser-control browser stop
   "phase": "bootstrap",
   "cdp_enabled": false,
   "pid": 12345,
-  "user_data_dir": "~/.local/share/saturn-frontier-browser-control/chromium",
+  "user_data_dir": "~/.local/share/saturn-agent-browser/chromium",
   "started_at": "2026-09-05T01:00:00Z"
 }
 ```
@@ -153,8 +154,8 @@ saturn-frontier-browser-control browser stop
 **Workflow:**
 
 ```bash
-# 1. Open Indeed in Firefox (host skill — not saturn-fbc daemon)
-FF=~/pig-mono/extensions/firefox/firefox.sh
+# 1. Open Indeed in Firefox (host skill — not saturn-agent-browser daemon)
+FF=~/projects/pig-mono/extensions/firefox/firefox.sh
 $FF open-url https://secure.indeed.com/auth
 
 # 2. Human logs in with password manager (Personal.kdbx / Firefox PM)
@@ -162,9 +163,9 @@ $FF open-url https://secure.indeed.com/auth
 
 # 4a. Manual apply path: stay in Firefox; no visual specialist (out of scope for FBC run)
 # 4b. Agent fill path: optional cookie bridge → isolated profile (phase 3)
-#     saturn-frontier-browser-control browser import-cookies --from firefox --domain indeed.com
-#     saturn-frontier-browser-control browser start
-#     saturn-frontier-browser-control run --contract contracts/indeed-easy-apply-JOBKEY.json
+#     saturn-agent-browser browser import-cookies --from firefox --domain indeed.com
+#     saturn-agent-browser browser start
+#     saturn-agent-browser run --contract contracts/indeed-easy-apply-JOBKEY.json
 ```
 
 **CLI additions (sketch):**
@@ -206,8 +207,8 @@ OpenClaw’s `user` (CDP attach to real Chrome) and `chrome` (extension relay) p
 
 ```bash
 # config/chromium.env (future)
-SATURN_FBC_BROWSER_CHANNEL=chrome
-# profile.py: launch_persistent_context(..., channel=os.environ.get("SATURN_FBC_BROWSER_CHANNEL"))
+SATURN_AGENT_BROWSER_BROWSER_CHANNEL=chrome
+# profile.py: launch_persistent_context(..., channel=os.environ.get("SATURN_AGENT_BROWSER_BROWSER_CHANNEL"))
 ```
 
 Use real Chrome binary for the **isolated** user-data dir — not the user’s daily profile. Reduces “insecure browser” for some OAuth flows; does not replace manual bootstrap for Cloudflare.
@@ -251,7 +252,7 @@ The successful Indeed run in the OpenAI Codex desktop browser changes the experi
 | **0** | Docs: `openclaw-comparison.md`, this file, Indeed warnings | Done |
 | **1** | Dedicated stable Chrome-family profile; human login with automation/CDP detached | Small–medium |
 | **2** | Extension relay proof of concept on the already-authenticated tab | Medium–large |
-| **3** | `SATURN_FBC_BROWSER_PROFILE` env + contract field validation | Small |
+| **3** | `SATURN_AGENT_BROWSER_BROWSER_PROFILE` env + contract field validation | Small |
 | **4** | `browser bootstrap start` / `session-ready` / state `phase` | Small–medium |
 | **5** | Patchright + stable Chrome isolated experiment | Medium |
 | **6** | Firefox → Chromium cookie import only as a fallback | Medium; fragile |

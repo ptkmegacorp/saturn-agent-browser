@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Create Agent.kdbx + master key file for saturn-frontier-browser-control broker.
+# Create Agent.kdbx + master key file for saturn-agent-browser broker.
 # Stops before anything that needs the KeePassXC GUI or Personal.kdbx.
 set -euo pipefail
 
@@ -8,7 +8,7 @@ ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 source "$ROOT/config/credentials.env" 2>/dev/null || true
 
 KDBX="${AGENT_KDBX:-~/keepass/Agent.kdbx}"
-KEY_DIR="${HOME}/.config/saturn-frontier-browser-control"
+KEY_DIR="${HOME}/.config/saturn-agent-browser"
 KEY_FILE="${AGENT_VAULT_KEY_FILE:-${KEY_DIR}/agent-vault.key}"
 SITES_GROUP="Sites"
 

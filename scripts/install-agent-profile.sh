@@ -8,12 +8,12 @@ ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 source "$ROOT/config/chromium.env"
 
 umask 0077
-mkdir -p "$SATURN_FBC_CHROMIUM_USER_DATA" "$PLAYWRIGHT_BROWSERS_PATH"
-chmod 700 "$SATURN_FBC_SHARE" "$SATURN_FBC_CHROMIUM_USER_DATA" "$PLAYWRIGHT_BROWSERS_PATH"
+mkdir -p "$SATURN_AGENT_BROWSER_CHROMIUM_USER_DATA" "$PLAYWRIGHT_BROWSERS_PATH"
+chmod 700 "$SATURN_AGENT_BROWSER_SHARE" "$SATURN_AGENT_BROWSER_CHROMIUM_USER_DATA" "$PLAYWRIGHT_BROWSERS_PATH"
 
 cat <<EOF
-saturn-frontier-browser-control Chromium tenant:
-  user-data:  $SATURN_FBC_CHROMIUM_USER_DATA
+saturn-agent-browser Chromium tenant:
+  user-data:  $SATURN_AGENT_BROWSER_CHROMIUM_USER_DATA
   browsers:   $PLAYWRIGHT_BROWSERS_PATH
-  wm class:   $SATURN_FBC_NAME
+  wm class:   $SATURN_AGENT_BROWSER_NAME
 EOF

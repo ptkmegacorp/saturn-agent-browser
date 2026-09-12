@@ -6,10 +6,10 @@ cd "$ROOT"
 source "$ROOT/config/chromium.env"
 
 CONTRACT="${1:-$ROOT/contracts/local-form.json}"
-HEADLESS="${SATURN_FBC_HEADLESS:-0}"
+HEADLESS="${SATURN_AGENT_BROWSER_HEADLESS:-0}"
 EXTRA=()
 if [[ "$HEADLESS" == "1" ]]; then
   EXTRA+=(--headless)
 fi
 
-exec "$ROOT/.venv/bin/saturn-fbc" run --contract "$CONTRACT" "${EXTRA[@]}"
+exec "$ROOT/.venv/bin/saturn-agent-browser" run --contract "$CONTRACT" "${EXTRA[@]}"

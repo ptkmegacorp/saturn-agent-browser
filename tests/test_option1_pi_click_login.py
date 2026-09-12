@@ -9,14 +9,14 @@ import urllib.request
 from datetime import UTC, datetime
 from pathlib import Path
 
-from saturn_fbc.auth_client import get_request
-from saturn_fbc.credentials import (
+from saturn_agent_browser.auth_client import get_request
+from saturn_agent_browser.credentials import (
     CredentialFillResult,
     CredentialRunState,
     fill_with_operator_gate,
     report_login_verification,
 )
-from saturn_fbc.option1_fixture import FixtureLoginWorld
+from saturn_agent_browser.option1_fixture import FixtureLoginWorld
 
 
 def _pi_up() -> bool:
@@ -47,7 +47,7 @@ def _auth_up() -> bool:
 def _chromium():
     from playwright.sync_api import sync_playwright
 
-    from saturn_fbc.config import load_config
+    from saturn_agent_browser.config import load_config
 
     load_config()
     return sync_playwright()
@@ -65,12 +65,12 @@ class Option1PiClickLoginTests(unittest.TestCase):
 
         world = FixtureLoginWorld()
         world.start(in_process_auth=False)
-        prev_click = os.environ.get("SATURN_FBC_PI_CLICK")
+        prev_click = os.environ.get("SATURN_AGENT_BROWSER_PI_CLICK")
         try:
             os.environ["SATURN_AUTH_URL"] = os.environ.get("SATURN_AUTH_URL", "http://127.0.0.1:8792").rstrip("/")
             os.environ["SATURN_AUTH_FBC_TOKEN_FILE"] = str(token_file)
-            os.environ["SATURN_FBC_PI_CLICK"] = "1"
-            from saturn_fbc.config import load_config
+            os.environ["SATURN_AGENT_BROWSER_PI_CLICK"] = "1"
+            from saturn_agent_browser.config import load_config
 
             load_config.cache_clear()
             load_config()
@@ -95,9 +95,9 @@ class Option1PiClickLoginTests(unittest.TestCase):
                 browser.close()
         finally:
             if prev_click is None:
-                os.environ.pop("SATURN_FBC_PI_CLICK", None)
+                os.environ.pop("SATURN_AGENT_BROWSER_PI_CLICK", None)
             else:
-                os.environ["SATURN_FBC_PI_CLICK"] = prev_click
+                os.environ["SATURN_AGENT_BROWSER_PI_CLICK"] = prev_click
             world.stop()
 
 

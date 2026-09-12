@@ -3,11 +3,11 @@
 
 iPhone Approve (default):
 
-  SATURN_FBC_HEADLESS=1 .venv/bin/python scripts/option1_the_internet_login.py --hitl
+  SATURN_AGENT_BROWSER_HEADLESS=1 .venv/bin/python scripts/option1_the_internet_login.py --hitl
 
 Local Saturn Pi click (test):
 
-  SATURN_FBC_HEADLESS=1 .venv/bin/python scripts/option1_the_internet_login.py --pi-click
+  SATURN_AGENT_BROWSER_HEADLESS=1 .venv/bin/python scripts/option1_the_internet_login.py --pi-click
 """
 
 from __future__ import annotations
@@ -40,16 +40,16 @@ def main() -> int:
     )
     os.environ.pop("SATURN_AUTH_FIXTURE_VAULT", None)
     if args.pi_click:
-        os.environ["SATURN_FBC_PI_CLICK"] = "1"
+        os.environ["SATURN_AGENT_BROWSER_PI_CLICK"] = "1"
     else:
-        os.environ.pop("SATURN_FBC_PI_CLICK", None)
+        os.environ.pop("SATURN_AGENT_BROWSER_PI_CLICK", None)
 
-    from saturn_fbc.auth_client import get_request, wait_request_state
-    from saturn_fbc.broker import vault as broker_vault
-    from saturn_fbc.browser.live_bindings import attach_live_bindings
-    from saturn_fbc.config import load_config
-    from saturn_fbc.contract import load_contract
-    from saturn_fbc.credentials import (
+    from saturn_agent_browser.auth_client import get_request, wait_request_state
+    from saturn_agent_browser.broker import vault as broker_vault
+    from saturn_agent_browser.browser.live_bindings import attach_live_bindings
+    from saturn_agent_browser.config import load_config
+    from saturn_agent_browser.contract import load_contract
+    from saturn_agent_browser.credentials import (
         CredentialFillResult,
         CredentialRunState,
         ensure_credential_filled,
@@ -66,7 +66,7 @@ def main() -> int:
 
     contract = load_contract(ROOT / "contracts" / "the-internet-login.json")
     contract.run_id = "the-internet-" + datetime.now(UTC).strftime("%Y%m%dT%H%M%SZ")
-    headless = os.environ.get("SATURN_FBC_HEADLESS", "1") != "0"
+    headless = os.environ.get("SATURN_AGENT_BROWSER_HEADLESS", "1") != "0"
 
     with sync_playwright() as playwright:
         browser = playwright.chromium.launch(headless=headless)

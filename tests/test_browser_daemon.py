@@ -8,19 +8,19 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from saturn_fbc.browser import daemon, state
-from saturn_fbc.browser.state import BrowserState
+from saturn_agent_browser.browser import daemon, state
+from saturn_agent_browser.browser.state import BrowserState
 
 
 @pytest.fixture
 def isolated_state(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
     share = tmp_path / "share"
     share.mkdir()
-    monkeypatch.setenv("SATURN_FBC_SHARE", str(share))
-    monkeypatch.setenv("SATURN_FBC_CHROMIUM_USER_DATA", str(share / "chromium"))
+    monkeypatch.setenv("SATURN_AGENT_BROWSER_SHARE", str(share))
+    monkeypatch.setenv("SATURN_AGENT_BROWSER_CHROMIUM_USER_DATA", str(share / "chromium"))
     monkeypatch.setenv("PLAYWRIGHT_BROWSERS_PATH", str(share / "playwright-browsers"))
-    monkeypatch.setenv("SATURN_FBC_NAME", "SaturnFrontierBrowserTest")
-    from saturn_fbc import config
+    monkeypatch.setenv("SATURN_AGENT_BROWSER_NAME", "SaturnAgentBrowserTest")
+    from saturn_agent_browser import config
 
     config.load_config.cache_clear()
     yield share
@@ -65,20 +65,20 @@ def test_is_pid_alive_current_process():
 
 
 def test_browser_mode_config(monkeypatch: pytest.MonkeyPatch):
-    from saturn_fbc import config
+    from saturn_agent_browser import config
 
-    monkeypatch.setenv("SATURN_FBC_BROWSER_MODE", "ephemeral")
+    monkeypatch.setenv("SATURN_AGENT_BROWSER_BROWSER_MODE", "ephemeral")
     config.load_config.cache_clear()
     assert config.browser_mode() == "ephemeral"
 
-    monkeypatch.setenv("SATURN_FBC_BROWSER_MODE", "invalid-mode")
+    monkeypatch.setenv("SATURN_AGENT_BROWSER_BROWSER_MODE", "invalid-mode")
     config.load_config.cache_clear()
     assert config.browser_mode() == "daemon"
 
 
 def test_browser_daemon_status_not_running(isolated_state: Path, monkeypatch: pytest.MonkeyPatch):
-    monkeypatch.setenv("SATURN_FBC_BROWSER_MODE", "daemon")
-    from saturn_fbc import config
+    monkeypatch.setenv("SATURN_AGENT_BROWSER_BROWSER_MODE", "daemon")
+    from saturn_agent_browser import config
 
     config.load_config.cache_clear()
     payload = daemon.browser_daemon_status()
@@ -175,8 +175,8 @@ def test_ensure_daemon_for_headed_run_skips_headless(monkeypatch: pytest.MonkeyP
 
 
 def test_ensure_daemon_for_headed_run_skips_ephemeral(isolated_state: Path, monkeypatch: pytest.MonkeyPatch):
-    monkeypatch.setenv("SATURN_FBC_BROWSER_MODE", "ephemeral")
-    from saturn_fbc import config
+    monkeypatch.setenv("SATURN_AGENT_BROWSER_BROWSER_MODE", "ephemeral")
+    from saturn_agent_browser import config
 
     config.load_config.cache_clear()
     with patch.object(daemon, "start_browser") as start_mock:
@@ -185,8 +185,8 @@ def test_ensure_daemon_for_headed_run_skips_ephemeral(isolated_state: Path, monk
 
 
 def test_ensure_daemon_for_headed_run_starts_when_down(isolated_state: Path, monkeypatch: pytest.MonkeyPatch):
-    monkeypatch.setenv("SATURN_FBC_BROWSER_MODE", "daemon")
-    from saturn_fbc import config
+    monkeypatch.setenv("SATURN_AGENT_BROWSER_BROWSER_MODE", "daemon")
+    from saturn_agent_browser import config
 
     config.load_config.cache_clear()
     with (
@@ -198,11 +198,11 @@ def test_ensure_daemon_for_headed_run_starts_when_down(isolated_state: Path, mon
 
 
 def test_runner_status_includes_browser_daemon(isolated_state: Path, monkeypatch: pytest.MonkeyPatch):
-    from saturn_fbc import config
-    from saturn_fbc.runner import status as runner_status
+    from saturn_agent_browser import config
+    from saturn_agent_browser.runner import status as runner_status
 
     config.load_config.cache_clear()
-    with patch("saturn_fbc.pig_stack.health_json", return_value={"profile": "test"}):
+    with patch("saturn_agent_browser.pig_stack.health_json", return_value={"profile": "test"}):
         payload = runner_status()
     assert "browser_daemon" in payload
     assert payload["browser_daemon"]["running"] is False

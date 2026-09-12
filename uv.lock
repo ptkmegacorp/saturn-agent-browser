@@ -418,7 +418,7 @@ wheels = [
 ]
 
 [[package]]
-name = "saturn-frontier-browser-control"
+name = "saturn-agent-browser"
 version = "0.1.0"
 source = { editable = "." }
 dependencies = [

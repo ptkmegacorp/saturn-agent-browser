@@ -64,16 +64,16 @@ New flow: user stays **in-thread**, uses **existing password-manager + biometric
 
 ## Saturn FBC relevance
 
-Saturn Frontier Browser Control uses a different surface with the same principle — **credentials never in model context**:
+Saturn Agent Browser Control uses a different surface with the same principle — **credentials never in model context**:
 
 | Grok Bot | Saturn FBC |
 |----------|------------|
 | In-chat HTML form → OS autofill → scoped injection into cloud browser tab | KeePass broker (`credential_policy: request_only`) → privileged local fill into isolated Chromium |
 | User biometrics via Apple Passwords / 1Password / Bitwarden | Broker generates/stores secrets; models get handles only |
-| Persistent cloud browser session reuse | Isolated Chromium profile at `~/.local/share/saturn-frontier-browser-control/chromium/` |
+| Persistent cloud browser session reuse | Isolated Chromium profile at `~/.local/share/saturn-agent-browser/chromium/` |
 | Chat-native UX on mobile/desktop | CLI + HDMI-headed daemon; Indeed uses Firefox warm-login + cookie session (see [`indeed.md`](indeed.md)) |
 
-**Design question for Saturn Pi PWA:** whether iOS Safari can reliably trigger autofill from an in-chat form that forwards values to a remote Playwright session — worth a spike against WebKit `autocomplete` and Credential Management constraints on iPhone.
+**Design question for Saturn Pi PWA (answered 2026-09-12: no):** iOS Safari cannot trigger *the target site's* autofill from a Pi-local form — Passwords binds entries to the form's origin (Saturn Pi), so Pi fields can neither offer nor save remote-site credentials. Grok's pattern works because its form *is* the login surface for its own backend; our remote-Chrome shape has no equivalent. Pi-local credential entry is abandoned; see `BROWSER_VERIFICATION_HANDOFF.md`.
 
 **Related docs:**
 

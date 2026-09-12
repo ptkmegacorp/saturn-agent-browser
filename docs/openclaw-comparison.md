@@ -1,6 +1,6 @@
 # OpenClaw comparison
 
-How [OpenClaw](https://docs.openclaw.ai/tools/browser) handles browser automation and credentials, and what Saturn Frontier Browser Control (FBC) should borrow.
+How [OpenClaw](https://docs.openclaw.ai/tools/browser) handles browser automation and credentials, and what Saturn Agent Browser Control (FBC) should borrow.
 
 **Context:** Live Indeed testing on Saturn (2026-09-04) hit Google OAuth “insecure browser” and Cloudflare Turnstile loops in our isolated Playwright Chromium + CDP daemon. OpenClaw documents the same failure class and routes around it with **profile selection**, not stealth patches alone.
 
@@ -8,7 +8,7 @@ How [OpenClaw](https://docs.openclaw.ai/tools/browser) handles browser automatio
 
 The canonical reuse/build decision is [OPENCLAW_INTEGRATION_BUILD_PLAN.md](OPENCLAW_INTEGRATION_BUILD_PLAN.md), pinned to OpenClaw `73b4086ff658973fb9ae07fa208c49ca8de82a67`. It records inspected panel/client/operation-ownership/screencast/relay source and concrete adoption gates.
 
-Current target: dedicated trusted Chrome profile, selected-tab OpenClaw-derived extension relay, same-profile authenticated-session continuation, Saturn Auth credential coordination and the `saturn-fbc-browser-web-ui` Pi capsule. The Firefox cookie bridge, profile-switching sequence and priority list below are earlier research alternatives. Preserve the live authenticated tab through continuation. Community vault projects below are separate from the inspected first-party OpenClaw implementation.
+Current target: dedicated trusted Chrome profile, selected-tab OpenClaw-derived extension relay, same-profile authenticated-session continuation, Saturn Auth credential coordination and the `saturn-agent-browser-web-ui` Pi capsule. The Firefox cookie bridge, profile-switching sequence and priority list below are earlier research alternatives. Preserve the live authenticated tab through continuation. Community vault projects below are separate from the inspected first-party OpenClaw implementation.
 
 ## TL;DR
 

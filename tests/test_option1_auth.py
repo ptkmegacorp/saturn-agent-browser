@@ -5,9 +5,9 @@ from __future__ import annotations
 import unittest
 from unittest.mock import patch
 
-from saturn_fbc.auth_client import AuthRequestView
-from saturn_fbc.contract import AuthorityContract, ContractMode, CredentialSpec
-from saturn_fbc.credentials import (
+from saturn_agent_browser.auth_client import AuthRequestView
+from saturn_agent_browser.contract import AuthorityContract, ContractMode, CredentialSpec
+from saturn_agent_browser.credentials import (
     CredentialFillResult,
     CredentialRunState,
     auto_create_allowed,
@@ -40,13 +40,13 @@ class Option1CredentialPolicyTests(unittest.TestCase):
         self.assertTrue(requires_user_approval(contract))
         self.assertFalse(auto_create_allowed(contract))
 
-    @patch("saturn_fbc.auth_client.report_outcome", return_value=True)
-    @patch("saturn_fbc.broker.fill_credential")
-    @patch("saturn_fbc.auth_client.consume_result")
-    @patch("saturn_fbc.auth_client.get_request")
-    @patch("saturn_fbc.auth_client.create_login_request")
-    @patch("saturn_fbc.broker.vault_ready", return_value=True)
-    @patch("saturn_fbc.credentials.password_fields_need_fill", return_value=True)
+    @patch("saturn_agent_browser.auth_client.report_outcome", return_value=True)
+    @patch("saturn_agent_browser.broker.fill_credential")
+    @patch("saturn_agent_browser.auth_client.consume_result")
+    @patch("saturn_agent_browser.auth_client.get_request")
+    @patch("saturn_agent_browser.auth_client.create_login_request")
+    @patch("saturn_agent_browser.broker.vault_ready", return_value=True)
+    @patch("saturn_agent_browser.credentials.password_fields_need_fill", return_value=True)
     def test_approved_request_fills(
         self,
         _need_fill,
@@ -57,8 +57,8 @@ class Option1CredentialPolicyTests(unittest.TestCase):
         fill_credential,
         report_outcome,
     ) -> None:
-        from saturn_fbc.auth_client import ConsumeResult
-        from saturn_fbc.credentials import ensure_credential_filled
+        from saturn_agent_browser.auth_client import ConsumeResult
+        from saturn_agent_browser.credentials import ensure_credential_filled
 
         create_login_request.return_value = AuthRequestView(
             request_id="auth_test",
@@ -92,11 +92,11 @@ class Option1CredentialPolicyTests(unittest.TestCase):
         fill_credential.assert_called_once()
         report_outcome.assert_called_with("auth_test", "filled")
 
-    @patch("saturn_fbc.auth_client.consume_result")
-    @patch("saturn_fbc.auth_client.get_request")
-    @patch("saturn_fbc.auth_client.create_login_request")
-    @patch("saturn_fbc.broker.vault_ready", return_value=True)
-    @patch("saturn_fbc.credentials.password_fields_need_fill", return_value=True)
+    @patch("saturn_agent_browser.auth_client.consume_result")
+    @patch("saturn_agent_browser.auth_client.get_request")
+    @patch("saturn_agent_browser.auth_client.create_login_request")
+    @patch("saturn_agent_browser.broker.vault_ready", return_value=True)
+    @patch("saturn_agent_browser.credentials.password_fields_need_fill", return_value=True)
     def test_persist_failed_consume_is_retryable(
         self,
         _need_fill,
@@ -105,8 +105,8 @@ class Option1CredentialPolicyTests(unittest.TestCase):
         get_request,
         consume_result,
     ) -> None:
-        from saturn_fbc.auth_client import ConsumeResult
-        from saturn_fbc.credentials import ensure_credential_filled
+        from saturn_agent_browser.auth_client import ConsumeResult
+        from saturn_agent_browser.credentials import ensure_credential_filled
 
         create_login_request.return_value = AuthRequestView(
             request_id="auth_persist",
@@ -135,11 +135,11 @@ class Option1CredentialPolicyTests(unittest.TestCase):
         result = ensure_credential_filled(self._contract(), FakePage(), state)
         self.assertEqual(result, CredentialFillResult.AUTH_UNAVAILABLE)
 
-    @patch("saturn_fbc.auth_client.report_outcome", return_value=True)
-    @patch("saturn_fbc.auth_client.get_request")
-    @patch("saturn_fbc.auth_client.create_login_request")
-    @patch("saturn_fbc.broker.vault_ready", return_value=True)
-    @patch("saturn_fbc.credentials.password_fields_need_fill", return_value=True)
+    @patch("saturn_agent_browser.auth_client.report_outcome", return_value=True)
+    @patch("saturn_agent_browser.auth_client.get_request")
+    @patch("saturn_agent_browser.auth_client.create_login_request")
+    @patch("saturn_agent_browser.broker.vault_ready", return_value=True)
+    @patch("saturn_agent_browser.credentials.password_fields_need_fill", return_value=True)
     def test_claimed_without_fill_reports_uncertain(
         self,
         _need_fill,
@@ -148,7 +148,7 @@ class Option1CredentialPolicyTests(unittest.TestCase):
         get_request,
         report_outcome,
     ) -> None:
-        from saturn_fbc.credentials import ensure_credential_filled
+        from saturn_agent_browser.credentials import ensure_credential_filled
 
         create_login_request.return_value = AuthRequestView(
             request_id="auth_claimed",
@@ -177,10 +177,10 @@ class Option1CredentialPolicyTests(unittest.TestCase):
         self.assertEqual(result, CredentialFillResult.AUTH_DENIED)
         report_outcome.assert_called_with("auth_claimed", "failed", "uncertain_delivery")
 
-    @patch("saturn_fbc.auth_client.get_request")
-    @patch("saturn_fbc.auth_client.create_login_request")
-    @patch("saturn_fbc.broker.vault_ready", return_value=True)
-    @patch("saturn_fbc.credentials.password_fields_need_fill", return_value=True)
+    @patch("saturn_agent_browser.auth_client.get_request")
+    @patch("saturn_agent_browser.auth_client.create_login_request")
+    @patch("saturn_agent_browser.broker.vault_ready", return_value=True)
+    @patch("saturn_agent_browser.credentials.password_fields_need_fill", return_value=True)
     def test_pending_request_waits(
         self,
         _need_fill,
@@ -188,7 +188,7 @@ class Option1CredentialPolicyTests(unittest.TestCase):
         create_login_request,
         get_request,
     ) -> None:
-        from saturn_fbc.credentials import ensure_credential_filled
+        from saturn_agent_browser.credentials import ensure_credential_filled
 
         create_login_request.return_value = AuthRequestView(
             request_id="auth_wait",
@@ -209,9 +209,9 @@ class Option1CredentialPolicyTests(unittest.TestCase):
         self.assertEqual(result, CredentialFillResult.AWAITING_APPROVAL)
         self.assertEqual(state.auth_request_id, "auth_wait")
 
-    @patch("saturn_fbc.auth_client.report_outcome", return_value=True)
+    @patch("saturn_agent_browser.auth_client.report_outcome", return_value=True)
     def test_independent_verify_reports_verified(self, report_outcome) -> None:
-        from saturn_fbc.credentials import CredentialRunState, report_login_verification
+        from saturn_agent_browser.credentials import CredentialRunState, report_login_verification
 
         class FakeLocator:
             def count(self):

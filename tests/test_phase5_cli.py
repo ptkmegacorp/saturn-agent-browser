@@ -7,7 +7,7 @@ from pathlib import Path
 
 from typer.testing import CliRunner
 
-from saturn_fbc.cli import app
+from saturn_agent_browser.cli import app
 
 
 runner = CliRunner()
@@ -65,7 +65,7 @@ def test_cli_broker_create_requires_vault(monkeypatch, tmp_path):
 
 def test_cli_specialist_status(monkeypatch):
     monkeypatch.setattr(
-        "saturn_fbc.specialist.specialist_configured",
+        "saturn_agent_browser.specialist.specialist_configured",
         lambda: False,
     )
     result = runner.invoke(app, ["specialist-status"])

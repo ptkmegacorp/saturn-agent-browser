@@ -6,8 +6,8 @@ from pathlib import Path
 
 import pytest
 
-from saturn_fbc.contract import StopReason
-from saturn_fbc.spark.loop import run_contract_path
+from saturn_agent_browser.contract import StopReason
+from saturn_agent_browser.spark.loop import run_contract_path
 
 
 ROOT = Path(__file__).resolve().parents[1]

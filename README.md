@@ -1,14 +1,16 @@
 # Saturn browser-agent build
 
+*2026-09-12: hard-cut rename from `saturn-frontier-browser-control` / `saturn-fbc` / `saturn_fbc` to `saturn-agent-browser` / `saturn_agent_browser` — old names removed without shims.*
+
 ## Current cross-project build handoff (2026-09-09)
 
 Read [OpenClaw integration build plan](docs/OPENCLAW_INTEGRATION_BUILD_PLAN.md) for the current coordinated direction, pinned source reuse map and agent work packages.
 
-- **Saturn FBC** owns the browser engine, profiles/cookies, task authority and authentication verification.
+- **Saturn Agent Browser** owns the browser engine, profiles/cookies, task authority and authentication verification.
 - **Saturn Auth** owns credential providers, authentication approval and protected delivery coordination: [plan](../saturn-auth/BUILD_REFACTOR_PLAN.md).
-- **`saturn-fbc-browser-web-ui`** is the planned Saturn Pi browser/approval feature capsule: [plan](../saturn-pi/modules/saturn-fbc-browser-web-ui/BUILD_REFACTOR_PLAN.md).
+- **`saturn-agent-browser-web-ui`** is the planned Saturn Pi browser/approval feature capsule: [plan](../saturn-pi/modules/saturn-agent-browser-web-ui/BUILD_REFACTOR_PLAN.md).
 
-These components operate together. Existing FBC paths/CLI and isolated Playwright behavior stay in place. OpenClaw-derived extension/relay/panel implementation and extraction of credential ownership into Saturn Auth are queued work. The sections below include existing V1 design context; the shared plan governs the new integration sequence.
+These components operate together. Existing agent-browser paths/CLI and isolated Playwright behavior stay in place. OpenClaw-derived extension/relay/panel implementation and extraction of credential ownership into Saturn Auth are queued work. The sections below include existing V1 design context; the shared plan governs the new integration sequence.
 
 ## What we are building
 
@@ -19,7 +21,7 @@ Two tiers only:
 | Tier | Name | Role |
 |------|------|------|
 | **Frontier model** | Cursor, Luna, etc. | Intent, planning, writing, exception handling |
-| **Visual specialist** | Local VLM on Saturn (default: **UI-Venus 2 9B**) | Screenshot + frontier subgoal → browser action |
+| **Visual specialist** | *Reserved* — future local VLM loop (see note under Observation) | Screenshot + frontier subgoal → browser action |
 
 Playwright is the deterministic control plane. KeePassXC is the offline credential vault.
 
@@ -36,7 +38,7 @@ This is not an autonomous “do anything online” agent. It is a constrained br
 | Component | Responsibility |
 |---|---|
 | **Frontier model** | Task plan; application copy; bounded subgoal; resolves escalations. |
-| **Visual specialist** | Local VLM (`ui-venus-2-9b-q4km-local` on `:8091` via llama.cpp). Screenshot + contract `subgoal` → Venus `<answer>Action(...)</answer>` parse → Playwright execute. Profile **`saturn-frontier-browser-control`**. Logic ported from [UI-Venus `venus_browser.py`](https://github.com/inclusionAI/UI-Venus/blob/UI-Venus-2/models/browser/venus_browser.py). |
+| **Visual specialist** | *Reserved for a future local visual specialist; see `models/potential-models/ui-venus-2-official-pipeline.md`. No pig-stack / llama-server wiring ships in this tree.* |
 | **Playwright** | Sole browser actuator. Captures screenshots, validates results, maintains Chromium profile, writes trace. |
 | **Credential broker** | Privileged local service. Default fill path. |
 
@@ -72,8 +74,8 @@ The frontier model can decide that a new one-off account is useful and can propo
 
 1. Frontier produces a bounded subgoal and policy (authority contract).
 2. Playwright opens this project's Chromium profile and captures **screenshot** + URL + trace metadata.
-3. **Visual specialist** (UI-Venus 2 on llama-server `:8091`) receives screenshot history + task; model emits `<answer>Click(point=(x,y))</answer>` (or Type, Scroll, …).
-4. **`parse_action()` / `execute()`** (ported from Venus) map normalized 0–999 coords to viewport and run Playwright; contract cage rejects disallowed actions.
+3. **Visual specialist** step is *reserved* (see note under Observation); no model call ships in this tree.
+4. **Contract cage** rejects disallowed actions before Playwright executes.
 5. On parse failure, captcha, `CallUser()`, or policy boundary: **escalate to frontier**.
 6. Stop on `Finished()`, success checks, step budget, domain change, credential request, or pre-submit boundary.
 
@@ -93,43 +95,43 @@ Use `run-skeleton` for scripted fills without loading the VLM.
 
 | Resource | Path / rule |
 |----------|-------------|
-| Profile (cookies, storage, extensions) | `~/.local/share/saturn-frontier-browser-control/chromium/` |
-| Playwright Chromium **binary** | `~/.local/share/saturn-frontier-browser-control/playwright-browsers/` (`PLAYWRIGHT_BROWSERS_PATH`) |
-| Headed default | `config/browser.env` — `DISPLAY=:0`, `SATURN_FBC_HEADLESS=0`, `SATURN_FBC_BROWSER_MODE=daemon` |
-| Browser daemon | User systemd `saturn-fbc-browser.service` or subprocess; CDP on `127.0.0.1:9222`; state in `browser-state.json` |
-| Window class (i3) | `SaturnFrontierBrowser` |
+| Profile (cookies, storage, extensions) | `~/.local/share/saturn-agent-browser/chromium/` |
+| Playwright Chromium **binary** | `~/.local/share/saturn-agent-browser/playwright-browsers/` (`PLAYWRIGHT_BROWSERS_PATH`) |
+| Headed default | `config/browser.env` — `DISPLAY=:0`, `SATURN_AGENT_BROWSER_HEADLESS=0`, `SATURN_AGENT_BROWSER_BROWSER_MODE=daemon` |
+| Browser daemon | User systemd `saturn-agent-browser.service` or subprocess; CDP on `127.0.0.1:9222`; state in `browser-state.json` |
+| Window class (i3) | `SaturnAgentBrowser` |
 | Launch | Playwright persistent context with that user-data dir; **no** `channel="chrome"` / `channel="chromium"` |
 
 ## Trusted Chrome (shipped 2026-09-09)
 
-Official **Google Chrome stable** (`/usr/bin/google-chrome-stable`, 153.0.8010.36 on Saturn) with a dedicated FBC profile. The window lives on HDMI (`SaturnTrustedChrome`). Saturn Pi **Browser** (not **Browser auth**) snapshots this lane over loopback CDP **`:9223`**. Isolated Playwright Chromium stays on **`:9222`**. Extension relay is **not** installed. the operator’s daily Firefox/Chrome profiles are unused.
+Official **Google Chrome stable** (`/usr/bin/google-chrome-stable`, 153.0.8010.36 on Saturn) with a dedicated agent-browser profile. The window lives on HDMI (`SaturnTrustedChrome`). Saturn Pi **Browser** (not **Browser auth**) snapshots this lane over loopback CDP **`:9223`**. Isolated Playwright Chromium stays on **`:9222`**. Extension relay is **not** installed. the operator’s daily Firefox/Chrome profiles are unused.
 
 CDP on the dedicated profile is the compromise that lets SSH / iPhone see the real Chrome tab. `--headless` remains forbidden. Chrome 136+ only allows remote debugging with a non-default `--user-data-dir` (this profile). `browser trusted start` restarts Chrome if it is running without a healthy CDP.
 
 | Resource | Path / rule |
 |----------|-------------|
-| Profile | `~/.local/share/saturn-frontier-browser-control/trusted-chrome/` |
+| Profile | `~/.local/share/saturn-agent-browser/trusted-chrome/` |
 | Binary | `/usr/bin/google-chrome-stable` (`scripts/install-google-chrome.sh`) |
 | Sandbox | `/opt/google/chrome/chrome-sandbox` setuid root (`4755`) — no `--no-sandbox` |
 | Window class | `SaturnTrustedChrome` |
-| CDP | `http://127.0.0.1:9223` (`SATURN_FBC_TRUSTED_CDP_PORT`) |
+| CDP | `http://127.0.0.1:9223` (`SATURN_AGENT_BROWSER_TRUSTED_CDP_PORT`) |
 | CLI | `browser trusted start\|status\|stop` · `browser profiles` · `browser view\|snapshot\|navigate --lane trusted` |
 | Forbidden | `--headless`, Playwright user-data dir, daily browser profile |
 
 ```bash
 ./scripts/install-google-chrome.sh
 ./scripts/install-trusted-browser-profile.sh
-saturn-frontier-browser-control browser trusted start
-saturn-frontier-browser-control browser view --lane trusted
+saturn-agent-browser browser trusted start
+saturn-agent-browser browser view --lane trusted
 ```
 
 KeePassXC-Browser is **optional** (`CREDENTIAL_FILL=keepassxc-browser`). Default is broker fill. If used, the extension is installed **only** into this profile.
 
 ## Observation
 
-The **visual specialist** consumes **screenshots** (multi-turn history per Venus loop). Optional a11y digest is a hint only — not a separate DOM inner loop.
-
-Integration plan: [`models/potential-models/ui-venus-2-official-pipeline.md`](../../models/potential-models/ui-venus-2-official-pipeline.md)
+> Visual specialist (local VLM loop) is reserved for a future iteration.
+> See `models/potential-models/ui-venus-2-official-pipeline.md` for the UI-Venus 2 pipeline reference.
+> No pig-stack / llama-server wiring ships in this tree; `run-skeleton` is the working scripted path.
 
 ## Terminology
 
@@ -178,8 +180,8 @@ Indeed has **no GOG-style CLI** for job seekers — official APIs and the Indeed
 # 2. Easy Apply fill — only after warm Saturn session (or skip if profile flagged)
 cp contracts/indeed-easy-apply.template.json contracts/indeed-easy-apply-JOBKEY.json
 # Edit start_url + task_data (merge profiles/indeed-applicant.json)
-saturn-frontier-browser-control browser start
-saturn-frontier-browser-control run --contract contracts/indeed-easy-apply-JOBKEY.json
+saturn-agent-browser browser start
+saturn-agent-browser run --contract contracts/indeed-easy-apply-JOBKEY.json
 # Review on HDMI; you Submit.
 ```
 
@@ -188,7 +190,7 @@ Use `credential_policy: "none"` on Indeed contracts — login is cookie-based, n
 ## Build order
 
 1. **Playwright skeleton:** dedicated profile, action schema, screenshots, allowlist, trace.
-2. **Venus browser loop:** port prompt / `parse_action` / `execute` from `venus_browser.py`; call llama-server `:8091` (OpenAI-compatible multimodal chat). Replace interim generic JSON client.
+2. **Visual specialist loop:** *reserved* — see note under Observation. No pig-stack / llama-server wiring ships in this tree.
 3. **Verifier layer:** checks, loop detector, escalation packet to frontier.
 4. **Credential broker**
 5. **Bounded live test**
@@ -206,19 +208,19 @@ Use `credential_policy: "none"` on Indeed contracts — login is cookie-based, n
 | Slot | Model |
 |------|-------|
 | Frontier | Luna / Cursor |
-| Visual specialist | **UI-Venus 2 9B Q4_K_M** + mmproj via **llama.cpp** (`saturn-frontier-browser-control` profile, `:8091`) |
+| Visual specialist | *Reserved* — see note under Observation (reference: `models/potential-models/ui-venus-2-official-pipeline.md`) |
 | Alternates | Holo2 4B (efficiency), MolmoPoint 8B (point-only) |
 
-A run switches pig-stack to this profile and **hides HUD overlay**; profile stays switched after exit.
+No pig-stack / llama-server wiring ships in this tree; runs never switch GPU profiles or hide overlays.
 
 ## Harness (Cursor only)
 
-CLI: `~/bin/saturn-frontier-browser-control`. Cursor skill only — **not** wired into Pig/Pi. Commands: `status`, `browser start|stop|status|restart`, `browser trusted start|stop|status`, `browser profiles`, `browser view|snapshot|navigate|control`, `run --contract`, `wait`, `last`, `abort`, `escalate-last`. The Saturn Pi capsule calls `view` / `snapshot` / `navigate` (CLI default lane is **isolated**; the Pi panel defaults to **trusted**).
+CLI: `~/bin/saturn-agent-browser`. Cursor skill only — **not** wired into Pig/Pi. Commands: `status`, `browser start|stop|status|restart`, `browser trusted start|stop|status`, `browser profiles`, `browser view|snapshot|navigate|control`, `run --contract`, `wait`, `last`, `abort`, `escalate-last`. The Saturn Pi capsule calls `view` / `snapshot` / `navigate` (CLI default lane is **isolated**; the Pi panel defaults to **trusted**).
 
-Headed runs attach to a **persistent browser daemon** (CDP). Start it explicitly with `browser start`, or let `run` / `run-skeleton` auto-start when `SATURN_FBC_BROWSER_MODE=daemon`. Headless/CI uses ephemeral launch-close (`--headless` or `SATURN_FBC_BROWSER_MODE=ephemeral`).
+Headed runs attach to a **persistent browser daemon** (CDP). Start it explicitly with `browser start`, or let `run` / `run-skeleton` auto-start when `SATURN_AGENT_BROWSER_BROWSER_MODE=daemon`. Headless/CI uses ephemeral launch-close (`--headless` or `SATURN_AGENT_BROWSER_BROWSER_MODE=ephemeral`).
 
 ## Status
 
-V1 scaffold is **on Saturn** (2026-09): isolated Chromium, authority contracts, broker, llama-server recipe + weights. **Venus loop port** (prompt/parser/executor from `venus_browser.py`) is the active integration step — interim generic JSON client is deprecated. Spark retired 2026-09-06.
+V1 scaffold is **on Saturn** (2026-09): isolated Chromium, authority contracts, broker. Visual-specialist loop is reserved (see note under Observation); `run-skeleton` is the working scripted path. Spark retired 2026-09-06; GPU-tenant (pig-stack) wiring removed 2026-09-12.
 
 **2026-09-09 evening:** trusted Chrome + Pi snapshot panel are live. Auth option-1 HITL (the-internet Approve → fill → verified login) still stands. Not done: OpenClaw extension relay, streaming/inspect, Indeed login measured on this CDP-on-dedicated-profile shape, Face ID for vault writes.

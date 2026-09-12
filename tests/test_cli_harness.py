@@ -9,7 +9,7 @@ from pathlib import Path
 import pytest
 
 ROOT = Path(__file__).resolve().parents[1]
-CLI = Path("~/bin/saturn-frontier-browser-control")
+CLI = Path("~/bin/saturn-agent-browser")
 
 
 def _run(args: list[str]) -> dict:

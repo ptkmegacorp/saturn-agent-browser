@@ -47,8 +47,8 @@ Sites like Google and Cloudflare treat **CDP-attached / automation Chromium** as
 
 ```bash
 # Wrong for Indeed login — CDP on from the start
-saturn-frontier-browser-control browser start
-saturn-frontier-browser-control run --contract contracts/indeed-login-bootstrap.json
+saturn-agent-browser browser start
+saturn-agent-browser run --contract contracts/indeed-login-bootstrap.json
 # Then log in on HDMI → Cloudflare Turnstile loop likely
 ```
 
@@ -58,13 +58,13 @@ Also avoid **Sign in with Google** in any automation-tagged browser.
 
 ```bash
 # 1. Login + pass Cloudflare in REAL Firefox — no CDP, no agent
-~/pig-mono/extensions/firefox/firefox.sh open-url https://secure.indeed.com/auth
+~/projects/pig-mono/extensions/firefox/firefox.sh open-url https://secure.indeed.com/auth
 # You: Indeed email/password (not Google SSO), complete any challenge, confirm jobs load.
 
 # 2. Easy Apply fill — only if Saturn profile already has a warm Indeed session
 #    (If Turnstile ever looped in the Saturn profile, reset or skip Saturn for login.)
-saturn-frontier-browser-control browser start
-saturn-frontier-browser-control run --contract contracts/indeed-easy-apply-JOBKEY.json
+saturn-agent-browser browser start
+saturn-agent-browser run --contract contracts/indeed-easy-apply-JOBKEY.json
 
 # 3. You Submit on HDMI
 ```
@@ -116,8 +116,8 @@ KeePass `Agent.kdbx` broker fill is for **disposable agent-created accounts**. F
 
 ```bash
 cd ~/projects/saturn-agent-browser
-saturn-frontier-browser-control browser start
-saturn-frontier-browser-control run --contract contracts/indeed-login-bootstrap.json
+saturn-agent-browser browser start
+saturn-agent-browser run --contract contracts/indeed-login-bootstrap.json
 ```
 
 This opens Indeed with **CDP already enabled** — acceptable for navigation smoke tests, **not** for passing Cloudflare Turnstile.
@@ -154,9 +154,9 @@ cat profiles/indeed-applicant.json
 3. Run:
 
    ```bash
-   saturn-frontier-browser-control validate-contract --path contracts/indeed-easy-apply-JOBKEY.json
-   saturn-frontier-browser-control run --contract contracts/indeed-easy-apply-JOBKEY.json
-   saturn-frontier-browser-control last    # trace + stop_reason
+   saturn-agent-browser validate-contract --path contracts/indeed-easy-apply-JOBKEY.json
+   saturn-agent-browser run --contract contracts/indeed-easy-apply-JOBKEY.json
+   saturn-agent-browser last    # trace + stop_reason
    ```
 
 4. Review the filled form on HDMI. **You** click Submit.
@@ -195,7 +195,7 @@ Indeed Easy Apply often wants a résumé file. `upload_sensitive` is blocked by 
 | Layer | Tool | Applies? |
 |-------|------|----------|
 | Job search | Indeed MCP (Claude connector), manual URLs, Luna research | No |
-| Apply | **saturn-frontier-browser-control** | Fill only; human submits |
+| Apply | **saturn-agent-browser** | Fill only; human submits |
 
 Optional later: thin `saturn-indeed search` wrapper upstream. Apply stays in this repo.
 

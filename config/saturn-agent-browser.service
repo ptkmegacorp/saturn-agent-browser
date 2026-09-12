@@ -1,0 +1,19 @@
+[Unit]
+Description=Saturn Agent Browser (persistent Chromium on HDMI)
+After=graphical-session.target network-online.target
+Wants=network-online.target
+# Single lane slot: starting one browser lane stops the other.
+Conflicts=saturn-agent-browser-trusted.service
+
+[Service]
+Type=simple
+WorkingDirectory=~/projects/saturn-agent-browser
+ExecStart=~/projects/saturn-agent-browser/scripts/browser-daemon.sh
+Restart=on-failure
+RestartSec=3
+TimeoutStopSec=10
+KillMode=mixed
+UMask=0077
+
+[Install]
+WantedBy=default.target

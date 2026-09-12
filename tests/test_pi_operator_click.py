@@ -23,7 +23,7 @@ class PiOperatorClickSmokeTests(unittest.TestCase):
     def test_home_loads_with_injected_login(self) -> None:
         if not _pi_up():
             self.skipTest("Saturn Pi is not listening on loopback")
-        from saturn_fbc.config import load_config
+        from saturn_agent_browser.config import load_config
         from playwright.sync_api import sync_playwright
 
         load_config()
@@ -39,7 +39,7 @@ class PiOperatorClickSmokeTests(unittest.TestCase):
             browser.close()
 
     def test_approve_requires_request_id(self) -> None:
-        from saturn_fbc.pi_operator_click import click_browser_auth_approve
+        from saturn_agent_browser.pi_operator_click import click_browser_auth_approve
 
         with self.assertRaises(ValueError):
             click_browser_auth_approve(request_id=None)
@@ -49,7 +49,7 @@ class PiOperatorClickSmokeTests(unittest.TestCase):
             self.skipTest("Saturn Pi is not listening on loopback")
         from pathlib import Path
 
-        from saturn_fbc.pi_operator_click import main
+        from saturn_agent_browser.pi_operator_click import main
 
         dest = Path("/tmp/saturn-pi-ui-shot-test.png")
         code = main(["shot", "--path", str(dest)])

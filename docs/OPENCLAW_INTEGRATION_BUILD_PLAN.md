@@ -1,6 +1,17 @@
-# Saturn FBC + Saturn Auth + Saturn Pi browser UI — integration handoff
+# Saturn Agent Browser + Saturn Auth + Saturn Pi browser UI — integration handoff
 
-Status (2026-09-09 review): initial Auth service, FBC Auth client and Pi approval capsule implemented. Live iPhone approval plumbing passed. Current priority: caller authorization, strict live bindings and atomic delivery lifecycle, followed by controlled browser fill and verified login.
+## Authoritative current checkpoint
+
+This checkpoint supersedes earlier status/next-step statements retained below as implementation history. Update this section when a gate changes; component plans link here for sequencing.
+
+- **Done:** Auth caller roles, exact credential-delivery bindings/live generations, atomic lifecycle/copy-on-write persistence; controlled login fixtures; owner-confirmed iPhone approval → fill → independent login verification on the public demonstration site. Shared Pi module panel and general UI operator are implemented. The Browser panel provides snapshots/tab selection and human-gated navigation.
+- **Current browser:** dedicated official Chrome with loopback CDP `:9223` for preview/control, plus isolated Playwright Chromium `:9222`. Use the descriptive name **dedicated Chrome/CDP preview** in plans/UI explanations. Existing `trusted` lane identifiers remain compatible. Google/Cloudflare acceptance and the planned extension lane require their own evidence.
+- **Next:** unify panel operations with live browser bindings and sensitive-state enforcement; validate navigation/redirect outcomes; replace global ownership as the authority with scoped expiring human leases. Then deliver contextual **Open verification** using the exact blocked tab/popup and a protected human interaction path.
+- **Deferred:** full streaming/inspect/annotation, broader generic-browser expansion, iPhone credential import/vault-write verification, and additional providers until their own gates. Extension work follows a scoped adoption/acceptance experiment when needed for the human-login workflow.
+
+Specific product intent: agents perform bounded website tasks on Saturn, while the owner can promptly complete authentication/verification from Saturn Pi and retain control of credentials and consequential actions. General UI automation remains supporting development infrastructure.
+
+New feature specification and next acceptance gates: [BROWSER_VERIFICATION_HANDOFF.md](BROWSER_VERIFICATION_HANDOFF.md). It defines a reusable task → exact browser page → human completion → verified continuation handoff.
 
 ## Progress checkpoint (2026-09-09)
 
@@ -8,7 +19,7 @@ Owner-confirmed working baseline: iPhone Saturn Pi Approve of existing KeePass c
 
 Git checkpoint (local `main`):
 
-- saturn-frontier-browser-control `7010622` (also `3952690` the-internet login)
+- saturn-agent-browser `7010622` (also `3952690` the-internet login)
 - saturn-pi `d3b8adb` (also `36f5f30` Approve recipe Reload/wait)
 - saturn-auth `ff036e5` (unchanged for this HITL; working tree clean)
 
@@ -30,7 +41,7 @@ Still queued: OpenClaw-derived extension relay, Indeed/Cloudflare measured on th
 
 Git checkpoint (`main`, this evening):
 
-- saturn-frontier-browser-control `f2b7a95`
+- saturn-agent-browser `f2b7a95`
 - saturn-pi `4d65496` (deployed; iPhone Saturn menu **Reload**)
 - saturn-auth `f734a3b` — unchanged this evening
 
@@ -46,14 +57,14 @@ These three components work in conjunction:
 |---|---|---|
 | Saturn FBC | `~/projects/saturn-agent-browser` | Browser lifecycle, profiles/cookies, tabs, observations, automation, authority contracts, authentication verification and task continuation |
 | Saturn Auth | `~/projects/saturn-auth` | Authentication request lifecycle, credential providers, user approval, protected delivery coordination, vault-write policy |
-| `saturn-fbc-browser-web-ui` | `~/projects/saturn-pi/modules/saturn-fbc-browser-web-ui` | Planned Saturn Pi feature capsule: browser panel, human control, task status and Saturn Auth cards |
+| `saturn-agent-browser-web-ui` | `~/projects/saturn-pi/modules/saturn-agent-browser-web-ui` | Planned Saturn Pi feature capsule: browser panel, human control, task status and Saturn Auth cards |
 
-FBC remains independently usable through its existing CLI. The UI capsule lives in Saturn Pi and talks to FBC and Saturn Auth through small authenticated internal seams. Preserve existing project paths, Python package `saturn_fbc`, CLI `saturn-frontier-browser-control`, and service `saturn-fbc-browser.service`.
+FBC remains independently usable through its existing CLI. The UI capsule lives in Saturn Pi and talks to the agent browser and Saturn Auth through small authenticated internal seams. Preserve existing project paths, Python package `saturn_agent_browser`, CLI `saturn-agent-browser`, and service `saturn-agent-browser.service`.
 
 Canonical companion plans:
 
 - Auth: `~/projects/saturn-auth/BUILD_REFACTOR_PLAN.md`
-- UI: `~/projects/saturn-pi/modules/saturn-fbc-browser-web-ui/BUILD_REFACTOR_PLAN.md`
+- UI: `~/projects/saturn-pi/modules/saturn-agent-browser-web-ui/BUILD_REFACTOR_PLAN.md`
 - Trusted lane: `../TRUSTED_BROWSER_REFACTOR_PLAN.md` (apply the precedence note there).
 
 This document owns integration order, shared bindings and upstream reuse decisions. Component plans own implementation detail. Earlier cookie-transfer and bespoke-relay proposals are historical alternatives; the current first target preserves the authenticated tab/profile and adapts OpenClaw's extension machinery.
@@ -62,7 +73,7 @@ This document owns integration order, shared bindings and upstream reuse decisio
 
 Owner clarification (2026-09-09): new modules and capabilities should keep established Saturn core functionality and existing consumers intact wherever practical. Place new responsibilities, dependencies and lifecycle inside the owning feature; integrate through existing seams or small explicit additions. Preserve low coupling, clear ownership, regression coverage and independent feature disablement/removal.
 
-Modify core when correctness, security, a missing integration boundary or demonstrated system simplification makes it necessary. Explain the necessity, limit the change and verify existing behavior. Shared helpers and adapters are optional techniques selected for actual needs. This principle applies across Auth, FBC and Saturn Pi; the UI helper below is one concrete example.
+Modify core when correctness, security, a missing integration boundary or demonstrated system simplification makes it necessary. Explain the necessity, limit the change and verify existing behavior. Shared helpers and adapters are optional techniques selected for actual needs. This principle applies across Auth, agent browser and Saturn Pi; the UI helper below is one concrete example.
 
 ## Local Saturn Pi UI helper — preferred additive strategy
 
@@ -76,12 +87,14 @@ Owner preference (2026-09-09): keep existing Saturn Pi and FBC tools/commands in
 
 Acceptance: existing tool smoke tests remain passing; a multi-step generic UI recipe works; FBC fixture approval uses the same primitives; ambiguous approval selection and identity-header forwarding outside the allowed origin fail safely. This helper extends development ergonomics while keeping task authority and existing tools intact.
 
-## Verified current state
+## Earlier implementation evidence (historical)
+
+The authoritative checkpoint above governs current completion and sequencing; dated observations below preserve evidence from their original review.
 
 - Saturn Auth has Bearer callers, exact origin/bindings, atomic `claimed`/`filled`/`verified`/`failed` reporting, copy-on-write persist, and FBC live document generations (same-origin navigation invalidates fill). Controlled browser fill + independently verified login: FBC `tests/test_option1_fixture_login.py`. Live iPhone fill of that fixture is `scripts/option1_fixture_login.py --hitl`. Real-service login remains owner-gated.
-- FBC contains Playwright browser/daemon code, authority contracts and direct credential-broker integration. Inspect `src/saturn_fbc/credentials.py`, `broker/`, `browser/`, `runner.py` and their tests before extraction.
+- FBC contains Playwright browser/daemon code, authority contracts and direct credential-broker integration. Inspect `src/saturn_agent_browser/credentials.py`, `broker/`, `browser/`, `runner.py` and their tests before extraction.
 - Saturn Pi's existing `modules/saturn-frontier-browser-auth` is an autofill spike: its HTTP submit returns field lengths. Device verification and credential relay are pending.
-- `saturn-fbc-browser-web-ui` is implemented/deployed; the owner confirmed the live iPhone smoke approval in Cursor session `redacted-cursor-session`, turns 16–17. The smoke script ends at approval; browser fill/login remains a separate gate.
+- `saturn-agent-browser-web-ui` is implemented/deployed; the owner confirmed the live iPhone smoke approval in Cursor session `redacted-cursor-session`, turns 16–17. The smoke script ends at approval; browser fill/login remains a separate gate.
 - Review reran 10 Auth and 3 capsule tests successfully; production health reported the capsule ready. Inspect current working trees before changes and preserve user work.
 
 ## Pinned OpenClaw research and reuse map
@@ -115,13 +128,13 @@ Additional discovered files to inspect before implementation: panel controller/r
 - Upstream native messaging bootstraps an authenticated relay. Preserve that distinction when adapting; earlier plans describing native messaging as the complete action transport need revision.
 - OpenClaw's broad `browser.request` and `evaluate` facilities require narrowing. Its panel uses evaluation for scroll/history/metrics/inspect. Implement named, validated operations for these capabilities; accept only the explicit Saturn operation allowlist from web clients.
 - Use a Saturn-specific extension identity/native-host registration and dedicated profile. Remove upstream Store-ID assumptions from installation code through a reviewed adaptation. Preserve pairing proof, origin validation, revocation and reconnect tests.
-- Browser-panel screenshots are remote page pixels. iOS Passwords autofill requires actual local form fields and a protected credential path. The inspected sources leave that Saturn-specific flow to implement.
+- Browser-panel screenshots are remote page pixels. **Decision 2026-09-12: no Pi-local credential form to pair with them.** iOS Passwords binds entries to the form's origin (Saturn Pi), so Pi fields can never offer or save the remote site's credentials. Credential typing stays in the real browser window; Pi keeps Approve-existing-entry plus view/verify.
 - Credentials remain excluded from model inputs, chat, annotations, media history, traces, logs and generic input events. Upstream code alone establishes only the behaviors observed above; Saturn's full credential guarantee requires end-to-end tests.
 
 ## Shared flow and bindings
 
 ```text
-Saturn Pi / saturn-fbc-browser-web-ui
+Saturn Pi / saturn-agent-browser-web-ui
   | browser status/view/human actions       | auth request approval/entry
   v                                        v
 Saturn FBC <--- protected delivery ---> Saturn Auth ---> KeePassXC
@@ -230,18 +243,20 @@ Apply runtime changes only after explicit approval.
 
 Review record template: `date | source/revision delta | local versions | site/lane | sanitized symptom | hypothesis | fixture result | approved live baseline/result | decision/rollback | next trigger`.
 
-## Ordered work packages and acceptance
+## Original work packages and acceptance — historical roadmap
 
-Current priority overrides the historical broad package order below: preserve the confirmed iPhone approval surface; implement the Auth plan's Review checkpoint (authenticated role/owner checks, exact origins plus required live bindings, atomic claim/fill/verification lifecycle); then connect it to a controlled browser-login fixture. FBC must source actual document/session generations, revalidate at protected fill, report separate fill/verification outcomes and resume only on independently verified login. Add race, omission, downgrade/port, fill-failure and crash/restart tests before real-credential delivery. The broader panel/extension packages follow the end-to-end proof and owner checkpoint.
+Use the authoritative checkpoint and `BROWSER_VERIFICATION_HANDOFF.md` for current sequencing. The package list below retains original scope and acceptance context.
+
+Earlier priority (completed baseline): preserve the confirmed iPhone approval surface, implement the Auth review hardening gates and connect them to a controlled browser-login fixture. FBC must source actual document/session generations, revalidate at protected fill, report separate fill/verification outcomes and resume only on independently verified login. Add race, omission, downgrade/port, fill-failure and crash/restart tests before real-credential delivery. The broader panel/extension packages follow the end-to-end proof and owner checkpoint.
 
 Implement one package at a time; parallel UI work uses fixtures after shared bindings are agreed.
 
 1. **Inventory + contracts + reuse spike.** Read source/tests and current git status across all three trees; establish existing baseline tests. Pin upstream; select dependency closure, Lit/plain-JS approach and sidecar transport; create provenance/license records when copying. Exercise minimal fixture-backed tab listing and image retrieval. Gate: written decisions, schema fixtures and exact baseline results.
 2. **FBC read-only browser service.** Preserve isolated Playwright behavior; add typed status/tab/view operations and route/document bindings. Port stale-target/capture guards. Gate: unauthorized/cross-session reads, navigation races and teardown tests pass; browser survives panel close.
-3. **Pi browser panel.** Register the optional `saturn-fbc-browser-web-ui` capsule; adapt tabs, URL display, snapshot view, task/connection state and capability-aware controls. Gate: module-disabled core chat works; 390×844 layout and reconnect/race tests pass. Start with snapshot capability; enable streaming only after its backend/security tests.
+3. **Pi browser panel.** Register the optional `saturn-agent-browser-web-ui` capsule; adapt tabs, URL display, snapshot view, task/connection state and capability-aware controls. Gate: module-disabled core chat works; 390×844 layout and reconnect/race tests pass. Start with snapshot capability; enable streaming only after its backend/security tests.
 4. **Trusted extension + bounded control.** Reuse upstream relay/selected-tab access and tests; dedicated stable-browser profile and reviewed extension identity. Prove human bootstrap, same-tab continuation, immediate revoke, single input owner and policy enforcement. Gate: fixtures pass; human-supervised target-site baseline measured. Site acceptance is site-specific.
 5. **Saturn Auth vertical slice.** Implement lifecycle/provider/browser adapter and the module's approval cards. First credential source and vault unlock policy require owner decision. Gate: synthetic login succeeds; origin replacement, expiry/replay, revoked approval and sensitive-media tests pass. Verify login independently of successful fill.
-6. **iPhone credential entry / vault writes.** Resolve the Face ID/user-verification question in Auth's decision section before enabling storage writes. Validate actual Safari and installed-PWA behavior. Gate: denied/cancelled/expired verification produces zero writes; duplicate approval creates at most one entry; synthetic secrets remain isolated.
+6. **Vault writes (no Pi-local entry form).** Decision 2026-09-12: iOS Passwords is origin-bound to Pi, so no Pi-local credential form can offer/save remote-site entries — that path is abandoned. Resolve the Face ID/user-verification question in Auth's decision section before enabling storage writes; entry happens in the real browser window or via a future same-tab relay. Gate: denied/cancelled/expired verification produces zero writes; duplicate approval creates at most one entry; synthetic secrets remain isolated.
 7. **Hardening and deployment.** Test process crashes, target replacement, auth-service outage, browser restart, module disposal and rollback. Run checks before a separately approved deploy. Retain profiles/vaults and record tested service configuration.
 
 Packages 2–4 can proceed while vault-write policy is under discussion. Existing credential creation behavior needs inventory and an explicit migration decision; route the new flow through Auth before exposing it to the module.
@@ -252,4 +267,4 @@ Read this plan and both component plans. Select the first incomplete package and
 
 For each package record: implementation status, changed files, upstream provenance, exact commands/results, fixture/live distinction, security evidence, known limitations, next package and rollback. Run `git diff --check` in Git projects, focused tests and the relevant full baseline. Saturn Auth is its own Git repository (`ptkmegacorp/saturn-auth`). Obtain human participation for live sign-in/challenges and approval before production deployment or vault writes.
 
-Current next step: the three mandatory review hardening gates in Saturn Auth's plan, implemented with FBC and the Pi capsule; then a synthetic controlled browser-login fixture using the proven live iPhone approval flow. Approval plumbing is complete. Full browser fill/login acceptance and broader panel/extension work remain pending.
+Current next step: follow the authoritative checkpoint at the top and implement the safety foundation in `BROWSER_VERIFICATION_HANDOFF.md`, then contextual protected human interaction. Preserve the completed approval/login baseline.

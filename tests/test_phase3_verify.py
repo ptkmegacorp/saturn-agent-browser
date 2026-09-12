@@ -2,9 +2,9 @@
 
 from __future__ import annotations
 
-from saturn_fbc.contract import AuthorityContract, ContractMode, StepRecord
-from saturn_fbc.escalate import EscalationPacket, build_packet, write_escalation
-from saturn_fbc.verify import VerificationResult, check_success
+from saturn_agent_browser.contract import AuthorityContract, ContractMode, StepRecord
+from saturn_agent_browser.escalate import EscalationPacket, build_packet, write_escalation
+from saturn_agent_browser.verify import VerificationResult, check_success
 
 
 def _contract(**kwargs) -> AuthorityContract:

@@ -6,9 +6,9 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from saturn_fbc.contract import AuthorityContract, BrowserAction, ContractMode
-from saturn_fbc.spark.client import SparkClient, SparkResponse, _extract_json, build_user_prompt
-from saturn_fbc.spark.loop import run_spark_loop
+from saturn_agent_browser.contract import AuthorityContract, BrowserAction, ContractMode
+from saturn_agent_browser.spark.client import SparkClient, SparkResponse, _extract_json, build_user_prompt
+from saturn_agent_browser.spark.loop import run_spark_loop
 
 
 def _sample_contract() -> AuthorityContract:
@@ -47,7 +47,7 @@ def test_spark_client_parse_valid_response():
         "choices": [{"message": {"content": '{"type":"type","index":1,"text":"hello"}'}}]
     }
     mock_response.raise_for_status = MagicMock()
-    with patch("saturn_fbc.spark.client.httpx.Client") as mock_client:
+    with patch("saturn_agent_browser.spark.client.httpx.Client") as mock_client:
         mock_client.return_value.__enter__.return_value.post.return_value = mock_response
         result = client.propose_action(
             _sample_contract(),
@@ -64,7 +64,7 @@ def test_spark_loop_dry_run_on_fixture():
     from pathlib import Path
 
     contract_path = Path(__file__).resolve().parents[1] / "contracts" / "local-form.json"
-    from saturn_fbc.contract import load_contract
+    from saturn_agent_browser.contract import load_contract
 
     contract = load_contract(contract_path)
     result = run_spark_loop(contract, headless=True, skip_gpu=True, dry_run_spark=True)

@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
-# Smoke-test ~/bin/saturn-frontier-browser-control JSON CLI.
+# Smoke-test ~/bin/saturn-agent-browser JSON CLI.
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
-CLI="${SATURN_FBC_CLI:-~/bin/saturn-frontier-browser-control}"
+CLI="${SATURN_AGENT_BROWSER_CLI:-~/bin/saturn-agent-browser}"
 
 json_ok() {
   python3 -c 'import json,sys; json.load(sys.stdin)' >/dev/null

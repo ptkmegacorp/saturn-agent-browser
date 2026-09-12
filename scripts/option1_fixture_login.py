@@ -33,20 +33,20 @@ def main() -> int:
     parser.add_argument(
         "--pi-click",
         action="store_true",
-        help="Test-scoped: click Saturn Pi Approve for this fixture request id (not saturn-fbc run)",
+        help="Test-scoped: click Saturn Pi Approve for this fixture request id (not saturn-agent-browser run)",
     )
     args = parser.parse_args()
 
-    from saturn_fbc.auth_client import get_request
-    from saturn_fbc.config import load_config
-    from saturn_fbc.credentials import (
+    from saturn_agent_browser.auth_client import get_request
+    from saturn_agent_browser.config import load_config
+    from saturn_agent_browser.credentials import (
         CredentialFillResult,
         CredentialRunState,
         ensure_credential_filled,
         fill_with_operator_gate,
         report_login_verification,
     )
-    from saturn_fbc.option1_fixture import FixtureLoginWorld
+    from saturn_agent_browser.option1_fixture import FixtureLoginWorld
     from playwright.sync_api import sync_playwright
 
     live_auth = args.hitl or args.pi_click
@@ -68,13 +68,13 @@ def main() -> int:
         run_id = "option1-fixture-cli-" + datetime.now(UTC).strftime("%Y%m%dT%H%M%SZ")
         contract = world.contract(run_id=run_id)
         with sync_playwright() as playwright:
-            headed = args.hitl and os.environ.get("SATURN_FBC_HEADLESS", "0") != "1"
+            headed = args.hitl and os.environ.get("SATURN_AGENT_BROWSER_HEADLESS", "0") != "1"
             browser = playwright.chromium.launch(headless=not headed)
             page = browser.new_page()
             page.goto(world.login_url)
             os.environ["AGENT_KDBX"] = str(world.kdbx)
             os.environ["AGENT_VAULT_KEY_FILE"] = str(world.key_file)
-            from saturn_fbc.broker import vault as broker_vault
+            from saturn_agent_browser.broker import vault as broker_vault
 
             if not broker_vault.vault_ready():
                 print(
@@ -87,7 +87,7 @@ def main() -> int:
                 return 2
             state = CredentialRunState(handle=world.handle)
             if args.pi_click:
-                os.environ["SATURN_FBC_PI_CLICK"] = "1"
+                os.environ["SATURN_AGENT_BROWSER_PI_CLICK"] = "1"
                 filled = fill_with_operator_gate(contract, page, state)
                 rid = state.auth_request_id
                 print(f"auth_request_id={rid}", flush=True)
@@ -123,7 +123,7 @@ def main() -> int:
                     f"Waiting on {rid} for about 30 seconds (Auth long-poll, no sleep loop).\n",
                     flush=True,
                 )
-                from saturn_fbc.auth_client import wait_request_state
+                from saturn_agent_browser.auth_client import wait_request_state
 
                 waited = wait_request_state(rid)
                 print(f"request_state={waited.state if waited else 'missing'}", flush=True)

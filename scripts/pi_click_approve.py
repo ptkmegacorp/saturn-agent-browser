@@ -16,7 +16,7 @@ def main() -> int:
     parser.add_argument("--request-id", required=True, help="Exact Auth request id")
     parser.add_argument("--headed", action="store_true")
     args = parser.parse_args()
-    from saturn_fbc.pi_operator_click import click_browser_auth_approve
+    from saturn_agent_browser.pi_operator_click import click_browser_auth_approve
 
     clicked = click_browser_auth_approve(
         request_id=args.request_id,
