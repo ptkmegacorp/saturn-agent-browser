@@ -145,15 +145,31 @@ def browser_dom_cmd(
     lane: str = typer.Option("isolated", "--lane", help="isolated or trusted"),
     max_nodes: int = typer.Option(200, "--max-nodes", help="Max a11y nodes (1-1000)"),
     max_chars: int = typer.Option(12000, "--max-chars", help="Max digest chars (500-100000)"),
+    max_links: int = typer.Option(200, "--max-links", help="Max anchor links (0-1000)"),
+    max_text_chars: int = typer.Option(6000, "--max-text-chars", help="Max page-text chars (0-100000)"),
     include_nodes: bool = typer.Option(True, "--include-nodes/--no-nodes", help="Include structured nodes list"),
+    include_links: bool = typer.Option(True, "--include-links/--no-links", help="Include anchor links list"),
+    include_text: bool = typer.Option(True, "--include-text/--no-text", help="Include visible page text"),
 ) -> None:
-    """Agent-readable DOM: numbered a11y digest + nodes as JSON (read-only)."""
-    result = capture_dom(tab_id, expected_generation=generation, lane=lane, max_nodes=max_nodes, max_chars=max_chars)
+    """Agent-readable DOM: a11y digest + nodes + links + text as JSON (read-only)."""
+    result = capture_dom(
+        tab_id,
+        expected_generation=generation,
+        lane=lane,
+        max_nodes=max_nodes,
+        max_chars=max_chars,
+        max_links=max_links if include_links else 0,
+        max_text_chars=max_text_chars if include_text else 0,
+    )
     if not result.get("ok"):
         _json_out(result)
         raise typer.Exit(code=1)
     if not include_nodes:
         result = {k: v for k, v in result.items() if k != "nodes"}
+    if not include_links:
+        result = {k: v for k, v in result.items() if k not in {"links", "link_count"}}
+    if not include_text:
+        result = {k: v for k, v in result.items() if k not in {"text", "text_truncated"}}
     _json_out(result)
 
 

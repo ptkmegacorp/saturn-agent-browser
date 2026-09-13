@@ -104,12 +104,71 @@ def _dom_fallback_snapshot(page: Page) -> list[dict[str, Any]]:
         role: el.tagName.toLowerCase(),
         name: el.getAttribute('aria-label') || el.getAttribute('name') || el.id || el.placeholder || el.innerText || '',
         value: el.value || '',
+        href: el.href || '',
         selector: el.id ? '#' + CSS.escape(el.id) : sel + ':nth-of-type(' + (Array.from(document.querySelectorAll(el.tagName)).indexOf(el) + 1) + ')',
       }));
     }
     """
     raw = page.evaluate(script)
     return list(raw)
+
+
+def capture_links(page: Page, max_links: int = 200) -> list[dict[str, str]]:
+    """DOM anchor list (text + absolute href) so agents can navigate from a digest.
+
+    The a11y tree carries names but no hrefs; this side-channel gives the URLs.
+    Never raises — returns [] when the page is gone or JS is blocked.
+    """
+    max_links = max(1, min(int(max_links or 200), 1000))
+    script = r"""
+    () => {
+      return Array.from(document.querySelectorAll('a[href]')).map((a) => ({
+        text: ((a.innerText || '').replace(/\s+/g, ' ').trim() || (a.getAttribute('aria-label') || '').trim()).slice(0, 120),
+        href: a.href || '',
+      })).filter((l) => l.href);
+    }
+    """
+    try:
+        raw = page.evaluate(script)
+    except Exception:
+        return []
+    links: list[dict[str, str]] = []
+    seen: set[str] = set()
+    for item in raw or []:
+        if not isinstance(item, dict):
+            continue
+        href = str(item.get("href") or "").strip()
+        if not href or len(href) > 2000:
+            continue
+        text = str(item.get("text") or "")[:120]
+        key = f"{text}\x00{href}"
+        if key in seen:
+            continue
+        seen.add(key)
+        links.append({"text": text, "href": href})
+        if len(links) >= max_links:
+            break
+    return links
+
+
+def collapse_text(value: str) -> str:
+    return re.sub(r"\s+", " ", value or "").strip()
+
+
+def capture_page_text(page: Page, max_chars: int = 6000) -> str:
+    """Bounded visible text (body.innerText, whitespace-collapsed).
+
+    Covers static article copy the interactive-node digest misses.
+    Never raises — returns "" when the page is gone or JS is blocked.
+    """
+    max_chars = max(0, min(int(max_chars or 0), 100000))
+    if max_chars == 0:
+        return ""
+    try:
+        raw = page.evaluate("() => (document.body ? document.body.innerText : '') || ''")
+    except Exception:
+        return ""
+    return collapse_text(str(raw))[:max_chars]
 
 
 def capture_a11y_indexed(page: Page) -> ObservationSnapshot:

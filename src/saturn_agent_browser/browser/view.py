@@ -11,7 +11,12 @@ import httpx
 from saturn_agent_browser.browser.control import read_control_mode, write_control_mode
 from saturn_agent_browser.browser.daemon import browser_daemon_status
 from saturn_agent_browser.browser import generations
-from saturn_agent_browser.browser.capture import _should_redact, capture_a11y_indexed
+from saturn_agent_browser.browser.capture import (
+    _should_redact,
+    capture_a11y_indexed,
+    capture_links,
+    capture_page_text,
+)
 from saturn_agent_browser.browser.interceptor import _host_allowed
 from saturn_agent_browser.browser import leases
 from saturn_agent_browser.browser.profile import connect_over_cdp, release_browser_context
@@ -299,11 +304,15 @@ def capture_dom(
     lane: str | None = None,
     max_nodes: int = 200,
     max_chars: int = 12000,
+    max_links: int = 200,
+    max_text_chars: int = 6000,
 ) -> dict[str, Any]:
-    """Agent-readable DOM: numbered a11y digest + structured nodes as JSON.
+    """Agent-readable DOM: numbered a11y digest + nodes + links + page text as JSON.
 
     Read-only like ``capture_snapshot`` (no control-mode gate) but returns
     text instead of PNG. Same sensitive/lease and stale-generation guards.
+    ``links`` carries anchor hrefs the a11y tree omits; ``text`` carries the
+    static article copy the interactive-node digest misses.
     """
     wanted = (tab_id or "").strip()
     if not wanted.startswith("tab-") or len(wanted) <= 4:
@@ -321,6 +330,16 @@ def capture_dom(
         return {"ok": False, "error": "invalid_max_chars"}
     max_nodes = max(1, min(max_nodes, 1000))
     max_chars = max(500, min(max_chars, 100000))
+    try:
+        max_links = int(max_links)
+    except (TypeError, ValueError):
+        return {"ok": False, "error": "invalid_max_links"}
+    try:
+        max_text_chars = int(max_text_chars)
+    except (TypeError, ValueError):
+        return {"ok": False, "error": "invalid_max_text_chars"}
+    max_links = max(0, min(max_links, 1000))
+    max_text_chars = max(0, min(max_text_chars, 100000))
     lane = normalize_lane(lane)
     if sensitive.is_sensitive(lane=lane, tab_id=wanted):
         human_lease = read_control_mode() == "human" and bool(leases.list_active(lane=lane, tab_id=wanted))
@@ -360,6 +379,9 @@ def capture_dom(
         truncated = total_nodes > len(shown_nodes) or len(digest) > max_chars
         if len(digest) > max_chars:
             digest = digest[:max_chars]
+        links = capture_links(match, max_links=max_links) if max_links else []
+        text = capture_page_text(match, max_chars=max_text_chars) if max_text_chars else ""
+        text_truncated = bool(text and len(text) >= max_text_chars)
         try:
             after = list_cdp_pages(cdp_url, lane)
         except Exception:
@@ -380,6 +402,10 @@ def capture_dom(
             "truncated": truncated,
             "digest": digest,
             "nodes": shown_nodes,
+            "link_count": len(links),
+            "links": links,
+            "text": text,
+            "text_truncated": text_truncated,
         }
     except Exception:
         return {"ok": False, "error": "dom_failed"}

@@ -101,3 +101,76 @@ def test_capture_dom_truncates(isolated_state: Path, monkeypatch: pytest.MonkeyP
     assert result["node_count"] == 10
     assert len(result["nodes"]) == 3
     assert result["truncated"] is True
+
+
+def test_capture_dom_includes_links_and_text(isolated_state: Path, monkeypatch: pytest.MonkeyPatch):
+    from saturn_agent_browser.browser import view as _view
+
+    snap = ObservationSnapshot(
+        url="https://example.com/",
+        title="Example",
+        mode="a11y_indexed",
+        nodes=[{"index": 1, "role": "link", "name": "Story", "value": ""}],
+        digest='[1] link "Story"',
+    )
+    _patch_cdp(monkeypatch, snap)
+    monkeypatch.setattr(
+        _view, "capture_links", lambda _page, max_links=200: [{"text": "15 comments", "href": "https://news.ycombinator.com/item?id=1"}]
+    )
+    monkeypatch.setattr(_view, "capture_page_text", lambda _page, max_chars=6000: "Introducing JetKVM Mini")
+
+    result = capture_dom("tab-abc")
+    assert result["ok"] is True
+    assert result["link_count"] == 1
+    assert result["links"][0]["href"] == "https://news.ycombinator.com/item?id=1"
+    assert "JetKVM" in result["text"]
+    assert result["text_truncated"] is False
+
+
+def test_capture_dom_zero_budgets_disable_links_text(isolated_state: Path, monkeypatch: pytest.MonkeyPatch):
+    snap = ObservationSnapshot(url="u", title="t", mode="a11y_indexed", nodes=[], digest="(empty page)")
+    _patch_cdp(monkeypatch, snap)
+
+    result = capture_dom("tab-abc", max_links=0, max_text_chars=0)
+    assert result["ok"] is True
+    assert result["links"] == []
+    assert result["text"] == ""
+
+
+def test_capture_links_dedupes_and_bounds():
+    from saturn_agent_browser.browser.capture import capture_links
+
+    class FakePage:
+        def evaluate(self, _script):
+            return [
+                {"text": "a", "href": "https://example.com/1"},
+                {"text": "a", "href": "https://example.com/1"},
+                {"text": "b", "href": "https://example.com/2"},
+            ]
+
+    assert capture_links(FakePage(), max_links=10) == [
+        {"text": "a", "href": "https://example.com/1"},
+        {"text": "b", "href": "https://example.com/2"},
+    ]
+
+
+def test_capture_page_text_collapses_and_truncates():
+    from saturn_agent_browser.browser.capture import capture_page_text
+
+    class FakePage:
+        def evaluate(self, _script):
+            return "Hello\n\n  world   foo"
+
+    assert capture_page_text(FakePage(), max_chars=100) == "Hello world foo"
+    assert capture_page_text(FakePage(), max_chars=5) == "Hello"
+
+
+def test_capture_helpers_never_raise():
+    from saturn_agent_browser.browser.capture import capture_links, capture_page_text
+
+    class BrokenPage:
+        def evaluate(self, _script):
+            raise RuntimeError("gone")
+
+    assert capture_links(BrokenPage()) == []
+    assert capture_page_text(BrokenPage()) == ""
