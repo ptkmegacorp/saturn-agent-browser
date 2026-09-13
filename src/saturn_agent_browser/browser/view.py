@@ -11,6 +11,7 @@ import httpx
 from saturn_agent_browser.browser.control import read_control_mode, write_control_mode
 from saturn_agent_browser.browser.daemon import browser_daemon_status
 from saturn_agent_browser.browser import generations
+from saturn_agent_browser.browser.capture import _should_redact, capture_a11y_indexed
 from saturn_agent_browser.browser.interceptor import _host_allowed
 from saturn_agent_browser.browser import leases
 from saturn_agent_browser.browser.profile import connect_over_cdp, release_browser_context
@@ -24,10 +25,12 @@ DEFAULT_PANEL_HOSTS = (
 
 CAPABILITIES_DISCONNECTED = {
     "snapshot": False,
+    "dom": False,
     "streaming": False,
     "inspect": False,
     "navigate": False,
     "reason_snapshot": "browser_disconnected",
+    "reason_dom": "browser_disconnected",
     "reason_streaming": "not_implemented",
     "reason_inspect": "not_implemented",
     "reason_navigate": "browser_disconnected",
@@ -72,9 +75,11 @@ def _connected_capabilities(mode: str) -> dict[str, Any]:
     human = mode == "human"
     return {
         "snapshot": True,
+        "dom": True,
         "streaming": False,
         "inspect": False,
         "navigate": human,
+        "reason_dom": None,
         "reason_streaming": "not_implemented",
         "reason_inspect": "not_implemented",
         "reason_navigate": None if human else "human_control_required",
@@ -269,6 +274,115 @@ def capture_snapshot(tab_id: str, expected_generation: str | None = None, lane: 
         }
     except Exception:
         return {"ok": False, "error": "snapshot_failed"}
+    finally:
+        release_browser_context(context, pw, attached=True)
+
+
+def _redacted_dom_nodes(nodes: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Copy a11y nodes with secret values redacted and text lengths bounded."""
+    redacted: list[dict[str, Any]] = []
+    for node in nodes:
+        entry = dict(node)
+        if _should_redact(node):
+            entry["value"] = "[redacted]"
+        for key in ("name", "value", "description"):
+            value = entry.get(key)
+            if isinstance(value, str) and len(value) > 300:
+                entry[key] = value[:300]
+        redacted.append(entry)
+    return redacted
+
+
+def capture_dom(
+    tab_id: str,
+    expected_generation: str | None = None,
+    lane: str | None = None,
+    max_nodes: int = 200,
+    max_chars: int = 12000,
+) -> dict[str, Any]:
+    """Agent-readable DOM: numbered a11y digest + structured nodes as JSON.
+
+    Read-only like ``capture_snapshot`` (no control-mode gate) but returns
+    text instead of PNG. Same sensitive/lease and stale-generation guards.
+    """
+    wanted = (tab_id or "").strip()
+    if not wanted.startswith("tab-") or len(wanted) <= 4:
+        return {"ok": False, "error": "invalid_tab_id"}
+    expected = (expected_generation or "").strip() or None
+    if expected is not None and not expected.startswith("doc-"):
+        return {"ok": False, "error": "invalid_generation"}
+    try:
+        max_nodes = int(max_nodes)
+    except (TypeError, ValueError):
+        return {"ok": False, "error": "invalid_max_nodes"}
+    try:
+        max_chars = int(max_chars)
+    except (TypeError, ValueError):
+        return {"ok": False, "error": "invalid_max_chars"}
+    max_nodes = max(1, min(max_nodes, 1000))
+    max_chars = max(500, min(max_chars, 100000))
+    lane = normalize_lane(lane)
+    if sensitive.is_sensitive(lane=lane, tab_id=wanted):
+        human_lease = read_control_mode() == "human" and bool(leases.list_active(lane=lane, tab_id=wanted))
+        if not human_lease:
+            return {"ok": False, "error": "sensitive_blocked"}
+    target_id = wanted[len("tab-") :]
+    runtime = _lane_runtime(lane)
+    if not runtime.get("running"):
+        return {"ok": False, "error": "browser_disconnected"}
+    cdp_url = str(runtime.get("cdp_url") or "")
+    try:
+        pages = list_cdp_pages(cdp_url, lane)
+    except Exception:
+        return {"ok": False, "error": "cdp_unreachable"}
+    meta = _tab_from_pages(pages, target_id)
+    if meta is None:
+        return {"ok": False, "error": "unknown_tab"}
+    if expected is not None and meta["document_generation"] != expected:
+        return {"ok": False, "error": "stale_document"}
+    pw = None
+    context = None
+    try:
+        pw, context, _attached = connect_over_cdp(cdp_url)
+        match = _find_page(context, target_id)
+        if match is None:
+            return {"ok": False, "error": "unknown_tab"}
+        snap = capture_a11y_indexed(match)
+        nodes = _redacted_dom_nodes(snap.nodes)
+        total_nodes = len(nodes)
+        shown_nodes = nodes[:max_nodes]
+        lines = []
+        for node in shown_nodes:
+            role = node.get("role") or "generic"
+            label = node.get("name") or node.get("value") or ""
+            lines.append(f"[{node.get('index')}] {role} \"{label}\"" if label else f"[{node.get('index')}] {role}")
+        digest = "\n".join(lines) if lines else "(empty page)"
+        truncated = total_nodes > len(shown_nodes) or len(digest) > max_chars
+        if len(digest) > max_chars:
+            digest = digest[:max_chars]
+        try:
+            after = list_cdp_pages(cdp_url, lane)
+        except Exception:
+            return {"ok": False, "error": "cdp_unreachable"}
+        live = _tab_from_pages(after, target_id)
+        if live is None:
+            return {"ok": False, "error": "unknown_tab"}
+        if expected is not None and live["document_generation"] != expected:
+            return {"ok": False, "error": "stale_document"}
+        return {
+            "ok": True,
+            "tab_id": live["tab_id"],
+            "document_generation": live["document_generation"],
+            "url": live["url"] or snap.url,
+            "title": live["title"] or snap.title,
+            "mode": snap.mode,
+            "node_count": total_nodes,
+            "truncated": truncated,
+            "digest": digest,
+            "nodes": shown_nodes,
+        }
+    except Exception:
+        return {"ok": False, "error": "dom_failed"}
     finally:
         release_browser_context(context, pw, attached=True)
 

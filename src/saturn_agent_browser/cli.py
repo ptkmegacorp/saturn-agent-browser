@@ -25,7 +25,7 @@ from saturn_agent_browser.browser.trusted import (
 from saturn_agent_browser.browser import leases
 from saturn_agent_browser.browser import sensitive
 from saturn_agent_browser.browser import verifications
-from saturn_agent_browser.browser.view import capture_snapshot, navigate_tab, read_view, set_panel_control
+from saturn_agent_browser.browser.view import capture_dom, capture_snapshot, navigate_tab, read_view, set_panel_control
 from saturn_agent_browser.config import load_config
 from saturn_agent_browser.contract import load_contract
 from saturn_agent_browser.escalate import dispatch_luna
@@ -134,6 +134,27 @@ def browser_snapshot_cmd(
             "title": result["title"],
         }
     )
+
+
+@browser_app.command("dom")
+def browser_dom_cmd(
+    tab_id: str = typer.Option(..., "--tab-id", help="Exact tab id from browser view"),
+    generation: str | None = typer.Option(
+        None, "--generation", help="Expected document_generation from browser view"
+    ),
+    lane: str = typer.Option("isolated", "--lane", help="isolated or trusted"),
+    max_nodes: int = typer.Option(200, "--max-nodes", help="Max a11y nodes (1-1000)"),
+    max_chars: int = typer.Option(12000, "--max-chars", help="Max digest chars (500-100000)"),
+    include_nodes: bool = typer.Option(True, "--include-nodes/--no-nodes", help="Include structured nodes list"),
+) -> None:
+    """Agent-readable DOM: numbered a11y digest + nodes as JSON (read-only)."""
+    result = capture_dom(tab_id, expected_generation=generation, lane=lane, max_nodes=max_nodes, max_chars=max_chars)
+    if not result.get("ok"):
+        _json_out(result)
+        raise typer.Exit(code=1)
+    if not include_nodes:
+        result = {k: v for k, v in result.items() if k != "nodes"}
+    _json_out(result)
 
 
 @browser_app.command("control")
