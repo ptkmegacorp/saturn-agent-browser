@@ -6,7 +6,7 @@ Status: planned next user-facing capability. Existing approval/login proof and C
 
 When a Saturn Pi task reaches browser authentication or verification, offer one clear **Open verification** action that presents the exact live tab/popup where human input is required. The owner enters credentials, selects an account, completes MFA/challenges or approves consent, then FBC verifies the result and resumes the bounded task.
 
-This is a reusable default handoff across browser tasks. Keep it in the existing `saturn-agent-browser-web-ui` capsule with small explicit core seams. Use the current shared module panel, agent-browser session ownership and Saturn Auth lifecycle. Follow ``SATURN_CONVENTIONS.md` in your Saturn dotfiles`.
+This is a reusable default handoff across browser tasks. Keep it in the existing `saturn-agent-browser-web-ui` capsule with small explicit core seams. Use the current shared module panel, agent-browser session ownership and Saturn Auth lifecycle. Follow `SATURN_CONVENTIONS.md` in your Saturn dotfiles checkout.
 
 ## Roles and entrypoint
 

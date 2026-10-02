@@ -47,7 +47,7 @@ Git checkpoint (`main`, this evening):
 
 ## Required host conventions
 
-Read ``SATURN_CONVENTIONS.md` in your Saturn dotfiles` before implementing any work package. Apply its simple Unix-style composition, clean stdout/stderr, explicit process/state ownership and core-preserving extension defaults. Saturn Pi presentation follows its shared module panel convention; feature behavior stays in the owning capsule. Cite this reference in agent handoffs and record necessary exceptions with tests.
+Read `SATURN_CONVENTIONS.md` in your Saturn dotfiles checkout before implementing any work package. Apply its simple Unix-style composition, clean stdout/stderr, explicit process/state ownership and core-preserving extension defaults. Saturn Pi presentation follows its shared module panel convention; feature behavior stays in the owning capsule. Cite this reference in agent handoffs and record necessary exceptions with tests.
 
 ## Canonical names and ownership
 
@@ -56,15 +56,15 @@ These three components work in conjunction:
 | Component | Location | Responsibility |
 |---|---|---|
 | Saturn FBC | `this repo checkout` | Browser lifecycle, profiles/cookies, tabs, observations, automation, authority contracts, authentication verification and task continuation |
-| Saturn Auth | ``saturn-auth` checkout` | Authentication request lifecycle, credential providers, user approval, protected delivery coordination, vault-write policy |
-| `saturn-agent-browser-web-ui` | ``saturn-pi` → `modules/saturn-agent-browser-web-ui`` | Planned Saturn Pi feature capsule: browser panel, human control, task status and Saturn Auth cards |
+| Saturn Auth | `saturn-auth` repo | Authentication request lifecycle, credential providers, user approval, protected delivery coordination, vault-write policy |
+| `saturn-agent-browser-web-ui` | `saturn-pi/modules/saturn-agent-browser-web-ui` | Planned Saturn Pi feature capsule: browser panel, human control, task status and Saturn Auth cards |
 
 FBC remains independently usable through its existing CLI. The UI capsule lives in Saturn Pi and talks to the agent browser and Saturn Auth through small authenticated internal seams. Preserve existing project paths, Python package `saturn_agent_browser`, CLI `saturn-agent-browser`, and service `saturn-agent-browser.service`.
 
 Canonical companion plans:
 
-- Auth: ``saturn-auth` checkout/BUILD_REFACTOR_PLAN.md`
-- UI: ``saturn-pi` → `modules/saturn-agent-browser-web-ui`/BUILD_REFACTOR_PLAN.md`
+- Auth: `saturn-auth/BUILD_REFACTOR_PLAN.md`
+- UI: `saturn-pi/modules/saturn-agent-browser-web-ui/BUILD_REFACTOR_PLAN.md`
 - Trusted lane: `../TRUSTED_BROWSER_REFACTOR_PLAN.md` (apply the precedence note there).
 
 This document owns integration order, shared bindings and upstream reuse decisions. Component plans own implementation detail. Earlier cookie-transfer and bespoke-relay proposals are historical alternatives; the current first target preserves the authenticated tab/profile and adapts OpenClaw's extension machinery.
