@@ -10,7 +10,7 @@
   "credential_policy": "none",
   "task_data": {
     "my-text": "Saturn live test",
-    "my-textarea": "Spark on selenium.dev — do not submit."
+    "my-textarea": "Selenium fixture — do not submit."
   },
   "success_checks": [
     "URL still on selenium.dev",

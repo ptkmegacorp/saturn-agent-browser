@@ -192,7 +192,7 @@ def fill_with_operator_gate(
 ) -> CredentialFillResult:
     """Fixture/test helper: fill, then Saturn Pi Approve for this request id only.
 
-    Production spark/visual loops do not call this. Requires SATURN_AGENT_BROWSER_PI_CLICK=1
+    Production visual/skeleton loops do not call this. Requires SATURN_AGENT_BROWSER_PI_CLICK=1
     and an exact auth_request_id (never the first pending card).
     """
     result = ensure_credential_filled(contract, page, state)

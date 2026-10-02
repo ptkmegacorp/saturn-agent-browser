@@ -25,8 +25,6 @@ Two tiers only:
 
 Playwright is the deterministic control plane. KeePassXC is the offline credential vault.
 
-**Spark-X2.5 4B is retired** from this project — no DOM/a11y inner loop.
-
 This is not an autonomous “do anything online” agent. It is a constrained browser subsystem with explicit authority boundaries, audit records, and a manual gate for consequential actions.
 
 ## Focused V1
@@ -221,6 +219,6 @@ Headed runs attach to a **persistent browser daemon** (CDP). Start it explicitly
 
 ## Status
 
-V1 scaffold is **on Saturn** (2026-09): isolated Chromium, authority contracts, broker. Visual-specialist loop is reserved (see note under Observation); `run-skeleton` is the working scripted path. Spark retired 2026-09-06; GPU-tenant (pig-stack) wiring removed 2026-09-12.
+V1 scaffold is **on Saturn** (2026-09): isolated Chromium, authority contracts, broker. Visual-specialist loop is reserved (see note under Observation); `run-skeleton` is the working scripted path. GPU-tenant (pig-stack) wiring removed 2026-09-12.
 
 **2026-09-09 evening:** trusted Chrome + Pi snapshot panel are live. Auth option-1 HITL (the-internet Approve → fill → verified login) still stands. Not done: OpenClaw extension relay, streaming/inspect, Indeed login measured on this CDP-on-dedicated-profile shape, Face ID for vault writes.

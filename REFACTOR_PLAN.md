@@ -77,7 +77,7 @@ Daemon must source `chromium.env` + `browser.env`, set `PLAYWRIGHT_BROWSERS_PATH
 |------|--------|
 | `profile.py` | `connect_over_cdp()`, `acquire_browser_context(headless, *, prefer_daemon=True)` |
 | `session.py` | `detach: bool` — on close, disconnect only (no `context.close()`) when attached |
-| `skeleton.py` / `spark/loop.py` | Use `acquire_browser_context`; headed + daemon running → attach |
+| `skeleton.py` / `visual/loop.py` | Use `acquire_browser_context`; headed + daemon running → attach |
 | Auto-start | Headed run when daemon down: `browser start` via subprocess OR clear error with hint |
 
 **Default policy (headed Saturn):**
