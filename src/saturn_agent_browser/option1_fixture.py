@@ -16,8 +16,10 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from typing import Any
 
-AUTH_ROOT = Path("~/projects/saturn-auth")
 FBC_ROOT = Path(__file__).resolve().parents[2]
+AUTH_ROOT = Path(
+    os.environ.get("SATURN_AUTH_ROOT", FBC_ROOT.parent / "saturn-auth")
+).expanduser()
 FIXTURES = FBC_ROOT / "fixtures"
 
 HANDLE = "Sites/127.0.0.1--alice--fixture"

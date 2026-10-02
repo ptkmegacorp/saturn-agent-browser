@@ -7,8 +7,8 @@ Conflicts=saturn-agent-browser-trusted.service
 
 [Service]
 Type=simple
-WorkingDirectory=~/projects/saturn-agent-browser
-ExecStart=~/projects/saturn-agent-browser/scripts/browser-daemon.sh
+WorkingDirectory=%h/projects/saturn-agent-browser
+ExecStart=%h/projects/saturn-agent-browser/scripts/browser-daemon.sh
 Restart=on-failure
 RestartSec=3
 TimeoutStopSec=10

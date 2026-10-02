@@ -7,9 +7,9 @@ Conflicts=saturn-agent-browser.service
 
 [Service]
 Type=simple
-WorkingDirectory=~/projects/saturn-agent-browser
-ExecStart=~/projects/saturn-agent-browser/scripts/trusted-chrome-service.sh
-ExecStop=~/projects/saturn-agent-browser/.venv/bin/python -m saturn_agent_browser.cli browser trusted stop
+WorkingDirectory=%h/projects/saturn-agent-browser
+ExecStart=%h/projects/saturn-agent-browser/scripts/trusted-chrome-service.sh
+ExecStop=%h/projects/saturn-agent-browser/.venv/bin/python -m saturn_agent_browser.cli browser trusted stop
 Restart=on-failure
 RestartSec=5
 TimeoutStopSec=20

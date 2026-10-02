@@ -15,7 +15,7 @@ New feature specification and next acceptance gates: [BROWSER_VERIFICATION_HANDO
 
 ## Progress checkpoint (2026-09-09)
 
-Owner-confirmed working baseline: iPhone Saturn Pi Approve of existing KeePass credential `Sites/the-internet.herokuapp.com--tomsmith--option1-low-risk` for `https://the-internet.herokuapp.com`, then FBC fill, Login, independent `.flash.success` check, Auth `verified`, URL `/secure`. Request `auth_redacted`. Cursor session `redacted-cursor-session`. Login Approve window is about 30 seconds; Browser Auth lists pending cards on overlay open.
+Owner-confirmed working baseline: iPhone Saturn Pi Approve of existing KeePass credential `Sites/the-internet.herokuapp.com--tomsmith--option1-low-risk` for `https://the-internet.herokuapp.com`, then FBC fill, Login, independent `.flash.success` check, Auth `verified`, URL `/secure`. Login Approve window is about 30 seconds; Browser Auth lists pending cards on overlay open.
 
 Git checkpoint (local `main`):
 
@@ -47,7 +47,7 @@ Git checkpoint (`main`, this evening):
 
 ## Required host conventions
 
-Read `~/saturn/saturn-dotfiles/docs/SATURN_CONVENTIONS.md` before implementing any work package. Apply its simple Unix-style composition, clean stdout/stderr, explicit process/state ownership and core-preserving extension defaults. Saturn Pi presentation follows its shared module panel convention; feature behavior stays in the owning capsule. Cite this reference in agent handoffs and record necessary exceptions with tests.
+Read ``SATURN_CONVENTIONS.md` in your Saturn dotfiles` before implementing any work package. Apply its simple Unix-style composition, clean stdout/stderr, explicit process/state ownership and core-preserving extension defaults. Saturn Pi presentation follows its shared module panel convention; feature behavior stays in the owning capsule. Cite this reference in agent handoffs and record necessary exceptions with tests.
 
 ## Canonical names and ownership
 
@@ -55,16 +55,16 @@ These three components work in conjunction:
 
 | Component | Location | Responsibility |
 |---|---|---|
-| Saturn FBC | `~/projects/saturn-agent-browser` | Browser lifecycle, profiles/cookies, tabs, observations, automation, authority contracts, authentication verification and task continuation |
-| Saturn Auth | `~/projects/saturn-auth` | Authentication request lifecycle, credential providers, user approval, protected delivery coordination, vault-write policy |
-| `saturn-agent-browser-web-ui` | `~/projects/saturn-pi/modules/saturn-agent-browser-web-ui` | Planned Saturn Pi feature capsule: browser panel, human control, task status and Saturn Auth cards |
+| Saturn FBC | `this repo checkout` | Browser lifecycle, profiles/cookies, tabs, observations, automation, authority contracts, authentication verification and task continuation |
+| Saturn Auth | ``saturn-auth` checkout` | Authentication request lifecycle, credential providers, user approval, protected delivery coordination, vault-write policy |
+| `saturn-agent-browser-web-ui` | ``saturn-pi` → `modules/saturn-agent-browser-web-ui`` | Planned Saturn Pi feature capsule: browser panel, human control, task status and Saturn Auth cards |
 
 FBC remains independently usable through its existing CLI. The UI capsule lives in Saturn Pi and talks to the agent browser and Saturn Auth through small authenticated internal seams. Preserve existing project paths, Python package `saturn_agent_browser`, CLI `saturn-agent-browser`, and service `saturn-agent-browser.service`.
 
 Canonical companion plans:
 
-- Auth: `~/projects/saturn-auth/BUILD_REFACTOR_PLAN.md`
-- UI: `~/projects/saturn-pi/modules/saturn-agent-browser-web-ui/BUILD_REFACTOR_PLAN.md`
+- Auth: ``saturn-auth` checkout/BUILD_REFACTOR_PLAN.md`
+- UI: ``saturn-pi` → `modules/saturn-agent-browser-web-ui`/BUILD_REFACTOR_PLAN.md`
 - Trusted lane: `../TRUSTED_BROWSER_REFACTOR_PLAN.md` (apply the precedence note there).
 
 This document owns integration order, shared bindings and upstream reuse decisions. Component plans own implementation detail. Earlier cookie-transfer and bespoke-relay proposals are historical alternatives; the current first target preserves the authenticated tab/profile and adapts OpenClaw's extension machinery.
@@ -94,7 +94,7 @@ The authoritative checkpoint above governs current completion and sequencing; da
 - Saturn Auth has Bearer callers, exact origin/bindings, atomic `claimed`/`filled`/`verified`/`failed` reporting, copy-on-write persist, and FBC live document generations (same-origin navigation invalidates fill). Controlled browser fill + independently verified login: FBC `tests/test_option1_fixture_login.py`. Live iPhone fill of that fixture is `scripts/option1_fixture_login.py --hitl`. Real-service login remains owner-gated.
 - FBC contains Playwright browser/daemon code, authority contracts and direct credential-broker integration. Inspect `src/saturn_agent_browser/credentials.py`, `broker/`, `browser/`, `runner.py` and their tests before extraction.
 - Saturn Pi's existing `modules/saturn-frontier-browser-auth` is an autofill spike: its HTTP submit returns field lengths. Device verification and credential relay are pending.
-- `saturn-agent-browser-web-ui` is implemented/deployed; the owner confirmed the live iPhone smoke approval in Cursor session `redacted-cursor-session`, turns 16–17. The smoke script ends at approval; browser fill/login remains a separate gate.
+- `saturn-agent-browser-web-ui` is implemented/deployed; the owner confirmed the live iPhone smoke approval. The smoke script ends at approval; browser fill/login remains a separate gate.
 - Review reran 10 Auth and 3 capsule tests successfully; production health reported the capsule ready. Inspect current working trees before changes and preserve user work.
 
 ## Pinned OpenClaw research and reuse map

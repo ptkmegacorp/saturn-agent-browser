@@ -9,7 +9,7 @@ from pathlib import Path
 
 from saturn_agent_browser import config
 
-DEFAULT_KDBX = Path("~/keepass/Agent.kdbx")
+DEFAULT_KDBX = Path.home() / "keepass" / "Agent.kdbx"
 DEFAULT_KEY_FILE = Path.home() / ".config" / "saturn-agent-browser" / "agent-vault.key"
 SITES_GROUP = "Sites"
 

@@ -155,7 +155,7 @@ saturn-agent-browser browser stop
 
 ```bash
 # 1. Open Indeed in Firefox (host skill — not saturn-agent-browser daemon)
-FF=~/projects/pig-mono/extensions/firefox/firefox.sh
+FF=`firefox.sh` on your host
 $FF open-url https://secure.indeed.com/auth
 
 # 2. Human logs in with password manager (Personal.kdbx / Firefox PM)

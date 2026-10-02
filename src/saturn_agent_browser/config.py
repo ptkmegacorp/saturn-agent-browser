@@ -137,7 +137,7 @@ def traces_dir() -> Path:
 CANDIDATE_TRUSTED_EXECUTABLES = (
     "/usr/bin/google-chrome-stable",
     "/usr/bin/google-chrome",
-    "~/.local/opt/google-chrome-stable/opt/google/chrome/google-chrome",
+    str(Path.home() / ".local/opt/google-chrome-stable/opt/google/chrome/google-chrome"),
     "/usr/bin/brave-browser",
 )
 

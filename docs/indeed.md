@@ -58,7 +58,7 @@ Also avoid **Sign in with Google** in any automation-tagged browser.
 
 ```bash
 # 1. Login + pass Cloudflare in REAL Firefox — no CDP, no agent
-~/projects/pig-mono/extensions/firefox/firefox.sh open-url https://secure.indeed.com/auth
+`firefox.sh` on your host open-url https://secure.indeed.com/auth
 # You: Indeed email/password (not Google SSO), complete any challenge, confirm jobs load.
 
 # 2. Easy Apply fill — only if Saturn profile already has a warm Indeed session
@@ -77,7 +77,7 @@ saturn-agent-browser run --contract contracts/indeed-easy-apply-JOBKEY.json
 
 - Google SSO was rejected in the Playwright Chromium tenant.
 - Indeed-native email/password login succeeded, then Indeed presented a persistent Cloudflare “Verify you are human” loop even after the operator completed the challenge manually.
-- An operator reported that the same Indeed workflow succeeded through the OpenAI Codex desktop app’s browser on Linux.
+- the operator reports that the same Indeed workflow succeeded through the OpenAI Codex desktop app’s browser on Linux.
 - The A/B result points to the Saturn browser/control surface or its session reputation as the primary cause; the account and network path remained usable through Codex.
 
 [OpenAI’s browser documentation](https://developers.openai.com/codex/app/browser) says its built-in browser has a separate persistent profile, supports direct human sign-in, and exposes full CDP through an optional Developer mode with explicit approval. Its [browser extension](https://developers.openai.com/codex/chrome-extension) can control an existing signed-in Chrome-family tab. Public documentation leaves the built-in browser engine, anti-bot modifications, and any Indeed/Cloudflare allowlisting unspecified, so those explanations remain hypotheses.
@@ -115,7 +115,7 @@ KeePass `Agent.kdbx` broker fill is for **disposable agent-created accounts**. F
 <summary>Legacy bootstrap (fixtures only — not for Indeed login)</summary>
 
 ```bash
-cd ~/projects/saturn-agent-browser
+cd this repo checkout
 saturn-agent-browser browser start
 saturn-agent-browser run --contract contracts/indeed-login-bootstrap.json
 ```

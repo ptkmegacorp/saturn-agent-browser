@@ -82,6 +82,20 @@ class AuthorityContract(BaseModel):
         return [item.strip().lower() for item in value]
 
 
+REPO_ROOT = Path(__file__).resolve().parents[2]
+
+
+def resolve_contract_url(url: str | None) -> str | None:
+    """Expand file://$REPO/... to an absolute file URI for this checkout."""
+    if not url:
+        return None
+    prefix = "file://$REPO/"
+    if url.startswith(prefix):
+        rel = url[len(prefix) :]
+        return (REPO_ROOT / rel).resolve().as_uri()
+    return url
+
+
 class StepRecord(BaseModel):
     step: int
     action: BrowserAction | None = None
@@ -98,7 +112,11 @@ class StepRecord(BaseModel):
 def load_contract(path: str | Path) -> AuthorityContract:
     """Validate and load an authority contract from a JSON file."""
     data = json.loads(Path(path).read_text(encoding="utf-8"))
-    return AuthorityContract.model_validate(data)
+    contract = AuthorityContract.model_validate(data)
+    resolved = resolve_contract_url(contract.start_url)
+    if resolved != contract.start_url:
+        contract = contract.model_copy(update={"start_url": resolved})
+    return contract
 
 
 def contract_to_json(contract: AuthorityContract) -> str:

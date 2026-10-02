@@ -7,7 +7,7 @@ ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 # shellcheck source=/dev/null
 source "$ROOT/config/credentials.env" 2>/dev/null || true
 
-KDBX="${AGENT_KDBX:-~/keepass/Agent.kdbx}"
+KDBX="${AGENT_KDBX:-$HOME/keepass/Agent.kdbx}"
 KEY_DIR="${HOME}/.config/saturn-agent-browser"
 KEY_FILE="${AGENT_VAULT_KEY_FILE:-${KEY_DIR}/agent-vault.key}"
 SITES_GROUP="Sites"

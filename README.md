@@ -174,7 +174,7 @@ Indeed has **no GOG-style CLI** for job seekers — official APIs and the Indeed
 
 ```bash
 # 1. Login in Firefox — NOT Saturn CDP daemon (see docs/indeed.md)
-~/pig-mono/extensions/firefox/firefox.sh open-url https://secure.indeed.com/auth
+`firefox.sh` on your host open-url https://secure.indeed.com/auth
 # Human: Indeed email/password, pass Cloudflare, confirm jobs load.
 
 # 2. Easy Apply fill — only after warm Saturn session (or skip if profile flagged)

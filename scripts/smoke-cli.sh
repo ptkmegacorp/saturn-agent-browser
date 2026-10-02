@@ -3,7 +3,7 @@
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
-CLI="${SATURN_AGENT_BROWSER_CLI:-~/bin/saturn-agent-browser}"
+CLI="${SATURN_AGENT_BROWSER_CLI:-$(command -v saturn-agent-browser || echo ./.venv/bin/saturn-agent-browser)}"
 
 json_ok() {
   python3 -c 'import json,sys; json.load(sys.stdin)' >/dev/null

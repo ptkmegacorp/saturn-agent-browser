@@ -3,7 +3,7 @@
   "mode": "draft",
   "subgoal": "Fill the local signup fixture (name, email). Broker fills password fields. Stop before Submit.",
   "origin_allowlist": [],
-  "start_url": "file://~/projects/saturn-agent-browser/fixtures/signup-with-password.html",
+  "start_url": "file://$REPO/fixtures/signup-with-password.html",
   "allowed_actions": ["navigate", "scroll", "click", "type", "select"],
   "blocked_actions": ["submit", "send", "purchase", "upload_sensitive", "change_security_settings"],
   "max_steps": 20,

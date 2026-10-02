@@ -8,9 +8,9 @@ The `saturn-frontier-browser-auth` name and routes below describe the existing a
 
 | Piece | Location |
 |-------|----------|
-| Feature capsule | `~/projects/saturn-pi/modules/saturn-frontier-browser-auth/` |
-| Frontier browser | `~/projects/saturn-agent-browser` |
-| CLI | `~/bin/saturn-agent-browser` |
+| Feature capsule | ``saturn-pi` → `modules/saturn-frontier-browser-auth/`` |
+| Frontier browser | `this repo checkout` |
+| CLI | ``saturn-agent-browser` on PATH` |
 
 `saturn-frontier-browser-auth` currently tests same-origin autofill submission and returns field lengths. The new capsule will supply the full browser panel plus Saturn Auth cards/forms; Saturn Auth coordinates protected delivery to FBC's bound browser adapter.
 
@@ -63,9 +63,9 @@ systemctl --user restart saturn-pi
 
 | Surface | URL |
 |---------|-----|
-| Standalone (Safari tab test) | `https://your-tailscale-serve-host.example/api/modules/saturn-frontier-browser-auth/test` |
+| Standalone (Safari tab test) | `https://<your-tailscale-serve-host>/api/modules/saturn-frontier-browser-auth/test` |
 | PWA overlay | Saturn Pi home → pill **FBC auth spike** |
-| Status JSON | `https://your-tailscale-serve-host.example/api/modules/saturn-frontier-browser-auth/status` |
+| Status JSON | `https://<your-tailscale-serve-host>/api/modules/saturn-frontier-browser-auth/status` |
 
 ### Device test log
 
@@ -86,4 +86,4 @@ Fill in after iPhone run:
 
 ## Module README
 
-Full capsule docs: `~/projects/saturn-pi/modules/saturn-frontier-browser-auth/README.md`
+Full capsule docs: ``saturn-pi` → `modules/saturn-frontier-browser-auth/`README.md`

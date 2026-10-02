@@ -4,12 +4,20 @@
 from __future__ import annotations
 
 import json
+import os
+import shutil
 import subprocess
 import sys
 from pathlib import Path
 
-_UI_ROOT = Path("~/projects/saturn-pi/tools/ui-operator")
-_SATURN_PI = Path("~/bin/saturn-pi")
+FBC_ROOT = Path(__file__).resolve().parents[2]
+_UI_ROOT = Path(
+    os.environ.get(
+        "SATURN_PI_UI_OPERATOR_ROOT",
+        FBC_ROOT.parent / "saturn-pi" / "tools" / "ui-operator",
+    )
+).expanduser()
+_SATURN_PI = shutil.which("saturn-pi") or os.environ.get("SATURN_PI_BIN", "saturn-pi")
 if str(_UI_ROOT) not in sys.path:
     sys.path.insert(0, str(_UI_ROOT))
 
@@ -20,7 +28,7 @@ def click_browser_auth_approve_cli(request_id: str) -> str:
         raise ValueError("request_id_required")
     rid = str(request_id).strip()
     result = subprocess.run(
-        [str(_SATURN_PI), "ui", "recipe", "fbc-approve", "--request-id", rid],
+        [_SATURN_PI, "ui", "recipe", "fbc-approve", "--request-id", rid],
         capture_output=True,
         text=True,
         check=False,

@@ -42,7 +42,7 @@ The trusted lane should preserve the browser session that Cloudflare accepted. S
 - Indeed then presented a persistent Cloudflare “Verify you are human” loop after a manual challenge attempt.
 - The recorded FBC login run stopped at step 1 with `stop_reason: captcha`:
   - `traces/20260905T010707Z-1c7f483e/trace.jsonl`
-- An operator reported that the same Indeed workflow succeeded through the OpenAI Codex desktop app’s browser on Linux.
+- the operator reports that the same Indeed workflow succeeded through the OpenAI Codex desktop app’s browser on Linux.
 - The Saturn browser service was stopped after the test.
 
 ### Current browser shape
